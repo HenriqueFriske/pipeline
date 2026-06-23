@@ -1,7 +1,7 @@
 import pytest
 import requests
 from unittest.mock import patch, Mock
-from core.api_client import generate_refactoring
+from core.api_client import generate_refactoring, GeminiAPIError, APIRateLimitError, APITimeoutError
 
 def test_generate_refactoring_empty_api_key():
     # Calling generate_refactoring with empty api_key raises a RuntimeError with "API_KEY" in the message.
@@ -95,7 +95,7 @@ def test_generate_refactoring_terminal_error():
     mock_response.text = "Bad Request"
     
     with patch("requests.post", return_value=mock_response) as mock_post:
-        with pytest.raises(RuntimeError) as exc_info:
+        with pytest.raises(GeminiAPIError) as exc_info:
             generate_refactoring(
                 persona_preamble="You are a developer.",
                 base_instruction="Refactor this",
@@ -111,7 +111,7 @@ def test_generate_refactoring_invalid_json():
     mock_response.json.return_value = {"bad_key": "bad_value"}
     
     with patch("requests.post", return_value=mock_response) as mock_post:
-        with pytest.raises(RuntimeError) as exc_info:
+        with pytest.raises(GeminiAPIError) as exc_info:
             generate_refactoring(
                 persona_preamble="You are a developer.",
                 base_instruction="Refactor this",
@@ -128,7 +128,7 @@ def test_generate_refactoring_retry_500():
     
     with patch("requests.post", return_value=mock_response) as mock_post, \
          patch("time.sleep") as mock_sleep:
-        with pytest.raises(RuntimeError) as exc_info:
+        with pytest.raises(GeminiAPIError) as exc_info:
             generate_refactoring(
                 persona_preamble="You are a developer.",
                 base_instruction="Refactor this",
@@ -154,7 +154,7 @@ def test_generate_refactoring_retry_429():
     
     with patch("requests.post", return_value=mock_response) as mock_post, \
          patch("time.sleep") as mock_sleep:
-        with pytest.raises(RuntimeError) as exc_info:
+        with pytest.raises(APIRateLimitError) as exc_info:
             generate_refactoring(
                 persona_preamble="You are a developer.",
                 base_instruction="Refactor this",
@@ -177,7 +177,7 @@ def test_generate_refactoring_retry_429():
 def test_generate_refactoring_retry_network_error():
     with patch("requests.post", side_effect=requests.RequestException("Connection error")) as mock_post, \
          patch("time.sleep") as mock_sleep:
-        with pytest.raises(RuntimeError) as exc_info:
+        with pytest.raises(APITimeoutError) as exc_info:
             generate_refactoring(
                 persona_preamble="You are a developer.",
                 base_instruction="Refactor this",
@@ -194,3 +194,48 @@ def test_generate_refactoring_retry_network_error():
             attempt = idx + 1
             base_backoff = 2 ** (attempt - 1)
             assert base_backoff <= sleep_time <= base_backoff + 1.0
+
+
+def test_logging_lazy_initialization():
+    # Test that logging/directory setup is lazy.
+    # We patch os.makedirs to verify it is called during execution when a log statement is reached.
+    import core.api_client
+    core.api_client._logger = None  # Reset global state for testing
+    with patch("core.api_client.os.makedirs") as mock_makedirs, \
+         patch("requests.post") as mock_post, \
+         patch("time.sleep") as mock_sleep:
+        # Cause a network error so it logs
+        mock_post.side_effect = requests.RequestException("Timeout")
+        
+        with pytest.raises(Exception):
+            generate_refactoring("", "instruction", "code", "key")
+        
+        mock_makedirs.assert_called_with("logs", exist_ok=True)
+
+
+
+
+
+def test_generate_refactoring_invalid_json_decode():
+    mock_response = Mock()
+    mock_response.status_code = 200
+    # Simulate a JSONDecodeError when calling json()
+    mock_response.json.side_effect = ValueError("Invalid control character")
+    
+    with patch("requests.post", return_value=mock_response):
+        with pytest.raises(GeminiAPIError) as exc_info:
+            generate_refactoring("", "instruction", "code", "key")
+        assert "Failed to decode response JSON" in str(exc_info.value)
+
+
+def test_generate_refactoring_type_error_json():
+    mock_response = Mock()
+    mock_response.status_code = 200
+    # candidates is a string instead of a list, causing TypeError when subscripting candidates[0]
+    mock_response.json.return_value = {"candidates": "invalid_type_string"}
+    
+    with patch("requests.post", return_value=mock_response):
+        with pytest.raises(GeminiAPIError) as exc_info:
+            generate_refactoring("", "instruction", "code", "key")
+        assert "Failed to parse response JSON" in str(exc_info.value)
+
