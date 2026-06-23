@@ -3,22 +3,25 @@ import signal
 import subprocess
 import shutil
 import logging
+import threading
 
 # Lazy logger initialization
 _logger = None
+_logger_lock = threading.Lock()
 
 def _get_logger() -> logging.Logger:
     global _logger
-    if _logger is None:
-        os.makedirs("logs", exist_ok=True)
-        _logger = logging.getLogger("defects4j")
-        _logger.setLevel(logging.DEBUG)
-        _logger.propagate = False
-        if not _logger.handlers:
-            file_handler = logging.FileHandler("logs/defects4j.log", encoding="utf-8")
-            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            file_handler.setFormatter(formatter)
-            _logger.addHandler(file_handler)
+    with _logger_lock:
+        if _logger is None:
+            os.makedirs("logs", exist_ok=True)
+            _logger = logging.getLogger("defects4j")
+            _logger.setLevel(logging.DEBUG)
+            _logger.propagate = False
+            if not _logger.handlers:
+                file_handler = logging.FileHandler("logs/defects4j.log", encoding="utf-8")
+                formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+                file_handler.setFormatter(formatter)
+                _logger.addHandler(file_handler)
     return _logger
 
 class Defects4JManager:
