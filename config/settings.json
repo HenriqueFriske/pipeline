@@ -1,0 +1,10 @@
+{
+  "api_key": "MOCK_API_KEY",
+  "sonar_url": "http://localhost:9000",
+  "sonar_token": "MOCK_SONAR_TOKEN",
+  "sonar_scanner_path": "sonar-scanner",
+  "defects4j_path": "defects4j",
+  "java_home": null,
+  "base_instruction": "Refactor the following Java code to improve readability and maintainability without changing its behavior:",
+  "workspace_root": "./temp_workspace"
+}

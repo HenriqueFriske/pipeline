@@ -1,0 +1,214 @@
+[
+  {
+    "trecho": "Math_1_ExtractMethod",
+    "project": "Math",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/Fraction.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_2_ExtractMethod",
+    "project": "Math",
+    "version": "2",
+    "file_path": "src/main/java/org/apache/commons/math3/distribution/HypergeometricDistribution.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_3_ExtractMethod",
+    "project": "Math",
+    "version": "3",
+    "file_path": "src/main/java/org/apache/commons/math3/util/ArithmeticUtils.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_4_ExtractMethod",
+    "project": "Math",
+    "version": "4",
+    "file_path": "src/main/java/org/apache/commons/math3/geometry/euclidean/threed/SubLine.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_5_ExtractMethod",
+    "project": "Math",
+    "version": "5",
+    "file_path": "src/main/java/org/apache/commons/math3/complex/Complex.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_6_ExtractMethod",
+    "project": "Math",
+    "version": "6",
+    "file_path": "src/main/java/org/apache/commons/math3/linear/Array2DRowRealMatrix.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_7_ExtractMethod",
+    "project": "Math",
+    "version": "7",
+    "file_path": "src/main/java/org/apache/commons/math3/ode/AbstractIntegrator.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_8_ExtractMethod",
+    "project": "Math",
+    "version": "8",
+    "file_path": "src/main/java/org/apache/commons/math3/distribution/DiscreteDistribution.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_9_ExtractMethod",
+    "project": "Math",
+    "version": "9",
+    "file_path": "src/main/java/org/apache/commons/math3/geometry/euclidean/threed/Line.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_10_ExtractMethod",
+    "project": "Math",
+    "version": "10",
+    "file_path": "src/main/java/org/apache/commons/math3/analysis/solvers/BisectionSolver.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_11_ExtractMethod",
+    "project": "Math",
+    "version": "11",
+    "file_path": "src/main/java/org/apache/commons/math3/distribution/MultivariateNormalDistribution.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_12_ExtractMethod",
+    "project": "Math",
+    "version": "12",
+    "file_path": "src/main/java/org/apache/commons/math3/random/BitsStreamGenerator.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_13_ExtractMethod",
+    "project": "Math",
+    "version": "13",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/general/AbstractLeastSquaresOptimizer.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_14_ExtractMethod",
+    "project": "Math",
+    "version": "14",
+    "file_path": "src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_15_ExtractMethod",
+    "project": "Math",
+    "version": "15",
+    "file_path": "src/main/java/org/apache/commons/math3/util/FastMath.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_16_ExtractMethod",
+    "project": "Math",
+    "version": "16",
+    "file_path": "src/main/java/org/apache/commons/math3/util/FastMath.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_17_ExtractMethod",
+    "project": "Math",
+    "version": "17",
+    "file_path": "src/main/java/org/apache/commons/math3/dfp/Dfp.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_18_ExtractMethod",
+    "project": "Math",
+    "version": "18",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_19_ExtractMethod",
+    "project": "Math",
+    "version": "19",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_20_ExtractMethod",
+    "project": "Math",
+    "version": "20",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_21_ExtractMethod",
+    "project": "Math",
+    "version": "21",
+    "file_path": "src/main/java/org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_22_ExtractMethod",
+    "project": "Math",
+    "version": "22",
+    "file_path": "src/main/java/org/apache/commons/math3/distribution/FDistribution.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_23_ExtractMethod",
+    "project": "Math",
+    "version": "23",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_24_ExtractMethod",
+    "project": "Math",
+    "version": "24",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_25_ExtractMethod",
+    "project": "Math",
+    "version": "25",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/fitting/HarmonicFitter.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_26_ExtractMethod",
+    "project": "Math",
+    "version": "26",
+    "project": "Math",
+    "version": "26",
+    "file_path": "src/main/java/org/apache/commons/math3/fraction/Fraction.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_27_ExtractMethod",
+    "project": "Math",
+    "version": "27",
+    "file_path": "src/main/java/org/apache/commons/math3/fraction/Fraction.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_28_ExtractMethod",
+    "project": "Math",
+    "version": "28",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_29_ExtractMethod",
+    "project": "Math",
+    "version": "29",
+    "file_path": "src/main/java/org/apache/commons/math3/linear/OpenMapRealVector.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_30_ExtractMethod",
+    "project": "Math",
+    "version": "30",
+    "file_path": "src/main/java/org/apache/commons/math3/stat/inference/MannWhitneyUTest.java",
+    "refatoracao_tipo": "ExtractMethod"
+  }
+]
