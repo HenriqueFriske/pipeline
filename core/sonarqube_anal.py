@@ -182,6 +182,48 @@ class SonarQubeManager:
                 raise SonarQubeError(f"Failed to retrieve metrics: {e}") from e
             raise
 
+    def search_issues(self, component_key: str, rules: list, page_size: int = 500, max_pages: int = 20) -> list:
+        url = f"{self.url}/api/issues/search"
+        logger = _get_logger()
+        rules_param = ",".join(rules)
+        logger.info(f"Searching issues for {component_key} rules={rules_param}")
+        results = []
+        page = 1
+        while page <= max_pages:
+            params = {"componentKeys": component_key, "rules": rules_param, "ps": page_size, "p": page}
+            try:
+                response = requests.get(url, params=params, auth=(self.token, ""), timeout=30)
+            except requests.RequestException as e:
+                raise SonarQubeServerError(f"Error searching issues: {e}") from e
+
+            if response.status_code >= 500:
+                raise SonarQubeServerError(f"SonarQube server returned 5xx error: {response.status_code}")
+            if response.status_code != 200:
+                raise SonarQubeConnectionError(f"Failed to search issues: HTTP {response.status_code} - {response.text}")
+
+            try:
+                data = response.json()
+            except Exception as e:
+                raise SonarQubeError(f"Error parsing issues JSON: {e}") from e
+
+            issues = data.get("issues", [])
+            for issue in issues:
+                component = issue.get("component", "")
+                file_path = component.split(":", 1)[1] if ":" in component else component
+                results.append({
+                    "rule": issue.get("rule"),
+                    "file_path": file_path,
+                    "line": issue.get("line"),
+                    "message": issue.get("message", ""),
+                    "effort": issue.get("effort"),
+                })
+
+            total = data.get("total", 0)
+            if not issues or page * page_size >= total:
+                break
+            page += 1
+        return results
+
     def delete_project(self, project_key: str) -> bool:
         url = f"{self.url}/api/projects/delete"
         data = {"project": project_key}

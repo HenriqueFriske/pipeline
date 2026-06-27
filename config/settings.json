@@ -1,10 +1,11 @@
 {
-  "api_key": "MOCK_API_KEY",
+  "api_key": "",
   "sonar_url": "http://localhost:9000",
-  "sonar_token": "MOCK_SONAR_TOKEN",
+  "sonar_token": "",
   "sonar_scanner_path": "sonar-scanner",
-  "defects4j_path": "defects4j",
-  "java_home": null,
+  "defects4j_path": "./defects4j/framework/bin/defects4j",
+  "java_home": "/Users/henriquefriske/Documents/pipeline/.jdk11/Contents/Home",
+  "perl5lib": "",
   "base_instruction": "Refactor the following Java code to improve readability and maintainability without changing its behavior:",
   "workspace_root": "./temp_workspace"
 }

@@ -32,6 +32,8 @@ class LedgerManager:
             with open(self.filepath, mode='w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(self.FIELDNAMES)
+                f.flush()
+                os.fsync(f.fileno())
 
     def get_completed_ids(self) -> set[int]:
         """Read the CSV file and return a set of completed id_rodada (integers)."""
@@ -56,3 +58,4 @@ class LedgerManager:
             writer = csv.DictWriter(f, fieldnames=self.FIELDNAMES, extrasaction='ignore')
             writer.writerow(row_data)
             f.flush()
+            os.fsync(f.fileno())

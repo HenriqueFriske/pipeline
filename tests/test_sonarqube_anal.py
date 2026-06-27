@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 import subprocess
 import requests
 import time
@@ -372,4 +372,60 @@ def test_scan_env_token_passing(mock_run):
     assert passed_env.get("SONAR_TOKEN") == "my-token"
     # Verify other env vars are preserved
     assert passed_env.get("SOME_VAR") == "value"
+
+
+def _issue(rule, component, line, message="msg"):
+    return {"rule": rule, "component": component, "line": line, "message": message, "effort": "5min"}
+
+
+def test_search_issues_single_page_strips_prefix():
+    from core.sonarqube_anal import SonarQubeManager
+    mgr = SonarQubeManager(url="http://localhost:9000", token="t")
+    resp = Mock()
+    resp.status_code = 200
+    resp.json.return_value = {
+        "total": 2,
+        "issues": [
+            _issue("java:S109", "finder_Lang_1:src/main/java/A.java", 12),
+            _issue("java:S3776", "finder_Lang_1:src/main/java/B.java", 30,
+                   "Refactor this method to reduce its Cognitive Complexity from 27 to the 15 allowed."),
+        ],
+    }
+    with patch("requests.get", return_value=resp):
+        out = mgr.search_issues("finder_Lang_1", ["java:S109", "java:S3776"])
+    assert len(out) == 2
+    assert out[0] == {"rule": "java:S109", "file_path": "src/main/java/A.java",
+                      "line": 12, "message": "msg", "effort": "5min"}
+    assert out[1]["file_path"] == "src/main/java/B.java"
+
+
+def test_search_issues_paginates():
+    from core.sonarqube_anal import SonarQubeManager
+    mgr = SonarQubeManager(url="http://localhost:9000", token="t")
+    page1 = Mock(status_code=200)
+    page1.json.return_value = {"total": 600, "issues": [_issue("java:S109", "k:f.java", i) for i in range(500)]}
+    page2 = Mock(status_code=200)
+    page2.json.return_value = {"total": 600, "issues": [_issue("java:S109", "k:f.java", i) for i in range(100)]}
+    with patch("requests.get", side_effect=[page1, page2]) as mock_get:
+        out = mgr.search_issues("k", ["java:S109"])
+    assert len(out) == 600
+    assert mock_get.call_count == 2
+
+
+def test_search_issues_empty():
+    from core.sonarqube_anal import SonarQubeManager
+    mgr = SonarQubeManager(url="http://localhost:9000", token="t")
+    resp = Mock(status_code=200)
+    resp.json.return_value = {"total": 0, "issues": []}
+    with patch("requests.get", return_value=resp):
+        assert mgr.search_issues("k", ["java:S109"]) == []
+
+
+def test_search_issues_server_error():
+    from core.sonarqube_anal import SonarQubeManager, SonarQubeServerError
+    mgr = SonarQubeManager(url="http://localhost:9000", token="t")
+    resp = Mock(status_code=503, text="down")
+    with patch("requests.get", return_value=resp):
+        with pytest.raises(SonarQubeServerError):
+            mgr.search_issues("k", ["java:S109"])
 

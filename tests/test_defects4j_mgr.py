@@ -29,8 +29,9 @@ def test_get_env_with_java_home(monkeypatch):
     monkeypatch.setenv("PATH", f"/usr/bin{os.pathsep}/bin")
     mgr = Defects4JManager(java_home="/path/to/java")
     env = mgr._get_env()
-    assert env.get("JAVA_HOME") == "/path/to/java"
-    assert env.get("PATH") == f"/path/to/java/bin{os.pathsep}/usr/bin{os.pathsep}/bin"
+    abs_java_home = os.path.abspath("/path/to/java")
+    assert env.get("JAVA_HOME") == abs_java_home
+    assert env.get("PATH") == f"{abs_java_home}{os.sep}bin{os.pathsep}/usr/bin{os.pathsep}/bin"
 
 def test_get_env_relative_java_home(monkeypatch):
     monkeypatch.setenv("PATH", f"/usr/bin{os.pathsep}/bin")
@@ -38,14 +39,33 @@ def test_get_env_relative_java_home(monkeypatch):
     env = mgr._get_env()
     abs_java_home = os.path.abspath("my_java")
     assert env.get("JAVA_HOME") == abs_java_home
-    assert env.get("PATH") == f"{abs_java_home}/bin{os.pathsep}/usr/bin{os.pathsep}/bin"
+    assert env.get("PATH") == f"{abs_java_home}{os.sep}bin{os.pathsep}/usr/bin{os.pathsep}/bin"
 
 def test_get_env_with_java_home_empty_path(monkeypatch):
     monkeypatch.delenv("PATH", raising=False)
     mgr = Defects4JManager(java_home="/path/to/java")
     env = mgr._get_env()
-    assert env.get("JAVA_HOME") == "/path/to/java"
-    assert env.get("PATH") == "/path/to/java/bin"
+    abs_java_home = os.path.abspath("/path/to/java")
+    assert env.get("JAVA_HOME") == abs_java_home
+    assert env.get("PATH") == f"{abs_java_home}{os.sep}bin"
+
+def test_get_env_perl5lib_none_not_injected(monkeypatch):
+    monkeypatch.delenv("PERL5LIB", raising=False)
+    mgr = Defects4JManager()
+    env = mgr._get_env()
+    assert "PERL5LIB" not in env
+
+def test_get_env_perl5lib_set_no_existing(monkeypatch):
+    monkeypatch.delenv("PERL5LIB", raising=False)
+    mgr = Defects4JManager(perl5lib="/opt/perl5")
+    env = mgr._get_env()
+    assert env["PERL5LIB"] == "/opt/perl5"
+
+def test_get_env_perl5lib_prepends_existing(monkeypatch):
+    monkeypatch.setenv("PERL5LIB", "/existing")
+    mgr = Defects4JManager(perl5lib="/opt/perl5")
+    env = mgr._get_env()
+    assert env["PERL5LIB"] == f"/opt/perl5{os.pathsep}/existing"
 
 @patch("core.defects4j_mgr._get_logger")
 @patch("shutil.rmtree")
@@ -169,9 +189,10 @@ def test_test_fail_comportamento(mock_popen, mock_get_logger):
     assert result == "FALHA_TESTES_COMPORTAMENTO"
 
 @patch("core.defects4j_mgr._get_logger")
-@patch("os.killpg")
-@patch("os.getpgid")
+@patch("os.killpg", create=True)
+@patch("os.getpgid", create=True)
 @patch("subprocess.Popen")
+@patch("core.defects4j_mgr.signal.SIGKILL", 9, create=True)
 def test_test_timeout(mock_popen, mock_getpgid, mock_killpg, mock_get_logger):
     mock_proc = MagicMock()
     mock_proc.pid = 9999
@@ -233,3 +254,17 @@ def test_export_classes_dir_exception(mock_run):
     result = mgr.export_classes_dir("/workspace")
 
     assert result == "target/classes"
+
+
+def test_export_source_dir_success():
+    mgr = Defects4JManager(d4j_bin="defects4j")
+    fake = MagicMock(returncode=0, stdout=b"src/main/java\n", stderr=b"")
+    with patch("subprocess.run", return_value=fake):
+        assert mgr.export_source_dir("/ws") == "src/main/java"
+
+
+def test_export_source_dir_fallback_on_failure():
+    mgr = Defects4JManager(d4j_bin="defects4j")
+    fake = MagicMock(returncode=1, stdout=b"", stderr=b"boom")
+    with patch("subprocess.run", return_value=fake):
+        assert mgr.export_source_dir("/ws") == "src/main/java"

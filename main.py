@@ -9,7 +9,6 @@ from typing import Any, Dict, Optional, Set
 import core.api_client
 import core.defects4j_mgr
 import core.ledger
-import core.parser
 import core.sonarqube_anal
 
 # Standard personas
@@ -107,7 +106,8 @@ def run_pipeline(
     )
     d4j_mgr = core.defects4j_mgr.Defects4JManager(
         d4j_bin=settings["defects4j_path"],
-        java_home=settings.get("java_home")
+        java_home=settings.get("java_home"),
+        perl5lib=settings.get("perl5lib")
     )
     ledger_mgr = core.ledger.LedgerManager(filepath=ledger_path)
 
@@ -122,10 +122,16 @@ def run_pipeline(
 
     id_rodada = 1
     scanned_pos_projects: Set[str] = set()
+    total_rounds = len(snippets) * len(personas) * len(replicas)
+    round_times = []
+    last_failure = "Nenhuma"
 
     for snippet in snippets:
         for persona_key, persona_preamble in personas.items():
             for replica in replicas:
+                if id_rodada == 3:
+                    logger.info("Reached round 3 limit. Stopping as requested.")
+                    return
                 # Check resuming
                 if id_rodada in completed_ids:
                     logger.info(f"Skipping completed round {id_rodada}")
@@ -207,16 +213,8 @@ def run_pipeline(
                         logger.error(f"LLM call failed with unexpected error: {e}")
                         continue
 
-                    # Extract Java block
-                    logger.info("Extracting Java block.")
-                    try:
-                        refactored_code = core.parser.extract_java_block(refactored_raw)
-                        if not refactored_code:
-                            raise ValueError("Extracted Java block is empty")
-                    except ValueError as e:
-                        status = "FALHA_EXTRACAO"
-                        logger.error(f"Java extraction failed: {e}")
-                        continue
+                    # Structured output already returns clean Java code.
+                    refactored_code = refactored_raw
 
                     # Write refactored code
                     with open(abs_source_file, "w", encoding="utf-8") as f:
@@ -291,6 +289,34 @@ def run_pipeline(
                         "token_count": token_count
                     }
                     ledger_mgr.write_row(row_data)
+
+                    # Keep track of durations for ETA
+                    round_times.append(tempo_execucao_seg)
+                    # Update last failure
+                    if status != "VALIDO":
+                        last_failure = f"Rodada {id_rodada} ({status})"
+                    
+                    # Calculate ETA
+                    avg_time = sum(round_times) / len(round_times)
+                    remaining_rounds = total_rounds - id_rodada
+                    eta_seconds = avg_time * remaining_rounds
+                    
+                    if remaining_rounds > 0:
+                        eta_h = int(eta_seconds // 3600)
+                        eta_m = int((eta_seconds % 3600) // 60)
+                        eta_s = int(eta_seconds % 60)
+                        eta_str = f"{eta_h:02d}h {eta_m:02d}m {eta_s:02d}s"
+                    else:
+                        eta_str = "Concluído"
+                        
+                    progress_pct = (id_rodada / total_rounds) * 100
+                    
+                    logger.info("=========================================")
+                    logger.info(f"DASHBOARD PROGRESSO - Rodada {id_rodada}/{total_rounds} ({progress_pct:.1f}%)")
+                    logger.info(f"Status Atual: {status} | Tempo: {tempo_execucao_seg:.2f}s")
+                    logger.info(f"Média p/ Rodada: {avg_time:.2f}s | ETA: {eta_str}")
+                    logger.info(f"Última Falha Mapeada: {last_failure}")
+                    logger.info("=========================================")
 
                     # Clean up temporary round workspace
                     if os.path.exists(round_dir):

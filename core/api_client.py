@@ -2,24 +2,43 @@ import os
 import time
 import random
 import logging
-import requests
 import threading
+
+import httpx
+from google import genai
+from google.genai import types, errors
+from pydantic import BaseModel
+
+# Gemini 3.x model. Sampling params (temperature/top_p/top_k) are discouraged on
+# 3.x; reasoning depth is controlled via thinking_level instead.
+MODEL = "gemini-3.5-flash"
+THINKING_LEVEL = "high"
+
 
 class GeminiAPIError(Exception):
     """Base exception for Gemini API errors."""
     pass
 
+
 class APIRateLimitError(GeminiAPIError):
     """Exception raised when the API rate limit is exceeded."""
     pass
+
 
 class APITimeoutError(GeminiAPIError):
     """Exception raised when a network timeout or related error occurs."""
     pass
 
+
+class RefactorResult(BaseModel):
+    """Schema enforced on the model's structured JSON output."""
+    refactored_code: str
+
+
 # Lazy logger initialization
 _logger = None
 _logger_lock = threading.Lock()
+
 
 def _get_logger() -> logging.Logger:
     global _logger
@@ -36,86 +55,90 @@ def _get_logger() -> logging.Logger:
                 _logger.addHandler(file_handler)
     return _logger
 
+
 def generate_refactoring(
     persona_preamble: str,
     base_instruction: str,
     code_snippet: str,
     api_key: str,
-    temperature: float = 0.2
 ) -> str:
+    """
+    Calls the Gemini API to refactor a Java snippet and returns the clean code.
+
+    Uses structured output (response_schema=RefactorResult) so the response is
+    guaranteed JSON, removing the need for fragile markdown/brace parsing.
+    Reasoning depth is set via thinking_level (no sampling params on Gemini 3.x).
+
+    Raises:
+        RuntimeError: api_key is empty.
+        APIRateLimitError: 429 after max retries.
+        GeminiAPIError: terminal 4xx, exhausted 5xx, or empty/invalid output.
+        APITimeoutError: network errors after max retries.
+    """
     if not api_key:
         raise RuntimeError("API_KEY must be provided and cannot be empty.")
-    
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={api_key}"
-    headers = {"Content-Type": "application/json"}
-    
-    # Construct payload
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": f"{base_instruction}\n\n{code_snippet}"}
-                ]
-            }
-        ],
-        "generationConfig": {
-            "temperature": temperature
-        }
-    }
-    
-    if persona_preamble:
-        payload["systemInstruction"] = {
-            "parts": [
-                {"text": persona_preamble}
-            ]
-        }
-        
+
+    client = genai.Client(api_key=api_key)
+    config = types.GenerateContentConfig(
+        response_mime_type="application/json",
+        response_schema=RefactorResult,
+        system_instruction=persona_preamble or None,
+        thinking_config=types.ThinkingConfig(thinking_level=THINKING_LEVEL),
+    )
+    contents = f"{base_instruction}\n\n{code_snippet}"
+
     max_attempts = 5
     for attempt in range(1, max_attempts + 1):
-        response = None
+        is_rate_limit = False
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=60)
-            
-            if response.status_code == 200:
-                try:
-                    response_data = response.json()
-                except (ValueError, AttributeError) as e:
-                    _get_logger().error(f"Attempt {attempt}: Failed to decode response JSON. Error: {e}")
-                    raise GeminiAPIError("Failed to decode response JSON from Gemini API") from e
-                
-                try:
-                    text = response_data['candidates'][0]['content']['parts'][0]['text']
-                    return text
-                except (KeyError, IndexError, TypeError) as e:
-                    _get_logger().error(f"Attempt {attempt}: Failed to parse JSON response. Data: {response_data}. Error: {e}")
-                    raise GeminiAPIError("Failed to parse response JSON from Gemini API") from e
-            
-            if response.status_code == 429 or 500 <= response.status_code < 600:
-                _get_logger().warning(f"Attempt {attempt}: Received status code {response.status_code}. Response: {response.text}")
+            response = client.models.generate_content(
+                model=MODEL,
+                contents=contents,
+                config=config,
+            )
+
+            result = response.parsed
+            if result is None or not getattr(result, "refactored_code", None):
+                _get_logger().error(
+                    f"Attempt {attempt}: Empty or invalid structured response. parsed={result!r}"
+                )
+                raise GeminiAPIError("Failed to parse structured response from Gemini API")
+            return result.refactored_code
+
+        except errors.APIError as e:
+            code = getattr(e, "code", None)
+            if code == 429:
+                is_rate_limit = True
+                _get_logger().warning(f"Attempt {attempt}: rate limit (429). {e}")
                 if attempt == max_attempts:
-                    if response.status_code == 429:
-                        raise APIRateLimitError(f"API request failed with status code 429 after {max_attempts} attempts.")
-                    else:
-                        raise GeminiAPIError(f"API request failed with status code {response.status_code} after {max_attempts} attempts.")
+                    raise APIRateLimitError(
+                        f"API request failed with status code 429 after {max_attempts} attempts."
+                    ) from e
+            elif code is not None and 500 <= code < 600:
+                _get_logger().warning(f"Attempt {attempt}: server error {code}. {e}")
+                if attempt == max_attempts:
+                    raise GeminiAPIError(
+                        f"API request failed with status code {code} after {max_attempts} attempts."
+                    ) from e
             else:
-                _get_logger().error(f"Attempt {attempt}: Received terminal error status code {response.status_code}. Response: {response.text}")
-                raise GeminiAPIError(f"API request failed with terminal status code {response.status_code}.")
-                
-        except requests.RequestException as e:
+                _get_logger().error(f"Attempt {attempt}: terminal error {code}. {e}")
+                raise GeminiAPIError(
+                    f"API request failed with terminal status code {code}."
+                ) from e
+
+        except httpx.HTTPError as e:
             _get_logger().warning(f"Attempt {attempt}: Network error occurred. Error: {e}")
             if attempt == max_attempts:
-                raise APITimeoutError(f"API request failed due to network errors after {max_attempts} attempts.") from e
-        
-        # Calculate backoff: 2 ** (attempt - 1)
-        base_backoff = 2 ** (attempt - 1)
-        jitter = random.uniform(0.0, 1.0)
-        sleep_time = base_backoff + jitter
-        
-        if response is not None and response.status_code == 429:
+                raise APITimeoutError(
+                    f"API request failed due to network errors after {max_attempts} attempts."
+                ) from e
+
+        # Calculate backoff: 2 ** (attempt - 1) + jitter, with a rate-limit penalty.
+        sleep_time = (2 ** (attempt - 1)) + random.uniform(0.0, 1.0)
+        if is_rate_limit:
             sleep_time += 30.0
-            
+
         _get_logger().info(f"Sleeping for {sleep_time:.2f} seconds before attempt {attempt + 1}...")
         time.sleep(sleep_time)
 
     raise GeminiAPIError("API request failed: reached unreachable code block in retry loop.")
-

@@ -3,7 +3,7 @@
     "trecho": "Math_1_ExtractMethod",
     "project": "Math",
     "version": "1",
-    "file_path": "src/main/java/org/apache/commons/math3/Fraction.java",
+    "file_path": "src/main/java/org/apache/commons/math3/fraction/Fraction.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {

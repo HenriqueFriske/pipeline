@@ -1,241 +1,178 @@
 import pytest
-import requests
-from unittest.mock import patch, Mock
-from core.api_client import generate_refactoring, GeminiAPIError, APIRateLimitError, APITimeoutError
+import httpx
+from unittest.mock import patch, Mock, MagicMock
+from google.genai import errors, types
 
-def test_generate_refactoring_empty_api_key():
-    # Calling generate_refactoring with empty api_key raises a RuntimeError with "API_KEY" in the message.
-    with pytest.raises(RuntimeError) as exc_info:
+from core.api_client import (
+    generate_refactoring,
+    GeminiAPIError,
+    APIRateLimitError,
+    APITimeoutError,
+    RefactorResult,
+    MODEL,
+)
+
+
+def _mock_client_returning(parsed):
+    """Fake genai.Client whose generate_content returns a response exposing .parsed."""
+    client = MagicMock()
+    response = Mock()
+    response.parsed = parsed
+    client.models.generate_content.return_value = response
+    return client
+
+
+def _mock_client_raising(exc):
+    client = MagicMock()
+    client.models.generate_content.side_effect = exc
+    return client
+
+
+def test_empty_api_key_raises():
+    with pytest.raises(RuntimeError) as exc:
+        generate_refactoring("persona", "instr", "code", api_key="")
+    assert "API_KEY" in str(exc.value)
+
+
+def test_returns_refactored_code_from_structured_response():
+    client = _mock_client_returning(RefactorResult(refactored_code="public class Refactored {}"))
+    with patch("core.api_client.genai.Client", return_value=client):
+        result = generate_refactoring(
+            "You are a dev.", "Refactor this", "public class Original {}", api_key="KEY"
+        )
+    assert result == "public class Refactored {}"
+
+
+def test_passes_model_and_thinking_config():
+    client = _mock_client_returning(RefactorResult(refactored_code="X {}"))
+    with patch("core.api_client.genai.Client", return_value=client) as mock_client_cls:
         generate_refactoring(
-            persona_preamble="You are a developer.",
-            base_instruction="Refactor this",
-            code_snippet="public class Main {}",
-            api_key=""
+            "You are a dev.", "Refactor this", "class O {}", api_key="KEY"
         )
-    assert "API_KEY" in str(exc_info.value)
 
-def test_generate_refactoring_payload_with_preamble():
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "candidates": [
-            {
-                "content": {
-                    "parts": [
-                        {"text": "public class Refactored {}"}
-                    ]
-                }
-            }
-        ]
-    }
-    
-    with patch("requests.post", return_value=mock_response) as mock_post:
-        result = generate_refactoring(
-            persona_preamble="You are a developer.",
-            base_instruction="Refactor this code",
-            code_snippet="public class Original {}",
-            api_key="TEST_API_KEY",
-            temperature=0.2
+    mock_client_cls.assert_called_once_with(api_key="KEY")
+    client.models.generate_content.assert_called_once()
+    _, kwargs = client.models.generate_content.call_args
+    assert kwargs["model"] == MODEL == "gemini-3.5-flash"
+    config = kwargs["config"]
+    # Gemini 3.x: sampling params omitted; reasoning controlled via thinking_level.
+    assert config.temperature is None
+    assert config.thinking_config.thinking_level == types.ThinkingLevel.HIGH
+    assert config.response_mime_type == "application/json"
+    assert config.response_schema is RefactorResult
+    assert config.system_instruction == "You are a dev."
+
+
+def test_contents_combine_instruction_and_snippet():
+    client = _mock_client_returning(RefactorResult(refactored_code="X {}"))
+    with patch("core.api_client.genai.Client", return_value=client):
+        generate_refactoring(
+            "persona", "Refactor this code", "public class Original {}", api_key="KEY"
         )
-        
-        assert result == "public class Refactored {}"
-        
-        mock_post.assert_called_once()
-        args, kwargs = mock_post.call_args
-        url = args[0]
-        assert "generativelanguage.googleapis.com" in url
-        assert "key=TEST_API_KEY" in url
-        
-        headers = kwargs.get("headers")
-        assert headers == {"Content-Type": "application/json"}
-        
-        json_data = kwargs.get("json")
-        assert json_data["contents"] == [
-            {"parts": [{"text": "Refactor this code\n\npublic class Original {}"}]}
-        ]
-        assert json_data["systemInstruction"] == {
-            "parts": [{"text": "You are a developer."}]
-        }
-        assert json_data["generationConfig"] == {"temperature": 0.2}
+    _, kwargs = client.models.generate_content.call_args
+    assert kwargs["contents"] == "Refactor this code\n\npublic class Original {}"
 
-def test_generate_refactoring_payload_without_preamble():
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "candidates": [
-            {
-                "content": {
-                    "parts": [
-                        {"text": "public class Refactored {}"}
-                    ]
-                }
-            }
-        ]
-    }
-    
-    with patch("requests.post", return_value=mock_response) as mock_post:
-        result = generate_refactoring(
-            persona_preamble="",
-            base_instruction="Refactor this code",
-            code_snippet="public class Original {}",
-            api_key="TEST_API_KEY",
-            temperature=0.2
-        )
-        
-        assert result == "public class Refactored {}"
-        
-        mock_post.assert_called_once()
-        _, kwargs = mock_post.call_args
-        json_data = kwargs.get("json")
-        assert "systemInstruction" not in json_data
 
-def test_generate_refactoring_terminal_error():
-    mock_response = Mock()
-    mock_response.status_code = 400
-    mock_response.text = "Bad Request"
-    
-    with patch("requests.post", return_value=mock_response) as mock_post:
-        with pytest.raises(GeminiAPIError) as exc_info:
-            generate_refactoring(
-                persona_preamble="You are a developer.",
-                base_instruction="Refactor this",
-                code_snippet="public class Main {}",
-                api_key="TEST_API_KEY"
-            )
-        assert "terminal status code 400" in str(exc_info.value)
-        mock_post.assert_called_once()
+def test_no_system_instruction_when_preamble_empty():
+    client = _mock_client_returning(RefactorResult(refactored_code="X {}"))
+    with patch("core.api_client.genai.Client", return_value=client):
+        generate_refactoring("", "Refactor this", "class O {}", api_key="KEY")
+    _, kwargs = client.models.generate_content.call_args
+    assert kwargs["config"].system_instruction is None
 
-def test_generate_refactoring_invalid_json():
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {"bad_key": "bad_value"}
-    
-    with patch("requests.post", return_value=mock_response) as mock_post:
-        with pytest.raises(GeminiAPIError) as exc_info:
-            generate_refactoring(
-                persona_preamble="You are a developer.",
-                base_instruction="Refactor this",
-                code_snippet="public class Main {}",
-                api_key="TEST_API_KEY"
-            )
-        assert "Failed to parse response JSON" in str(exc_info.value)
-        mock_post.assert_called_once()
 
-def test_generate_refactoring_retry_500():
-    mock_response = Mock()
-    mock_response.status_code = 500
-    mock_response.text = "Internal Server Error"
-    
-    with patch("requests.post", return_value=mock_response) as mock_post, \
-         patch("time.sleep") as mock_sleep:
-        with pytest.raises(GeminiAPIError) as exc_info:
-            generate_refactoring(
-                persona_preamble="You are a developer.",
-                base_instruction="Refactor this",
-                code_snippet="public class Main {}",
-                api_key="TEST_API_KEY"
-            )
-        assert "status code 500 after 5 attempts" in str(exc_info.value)
-        assert mock_post.call_count == 5
-        assert mock_sleep.call_count == 4
-        
-        # Verify backoff values
-        calls = [call[0][0] for call in mock_sleep.call_args_list]
-        for idx, sleep_time in enumerate(calls):
-            attempt = idx + 1
-            base_backoff = 2 ** (attempt - 1)
-            # Sleep time should be base_backoff + jitter (where 0 <= jitter <= 1)
-            assert base_backoff <= sleep_time <= base_backoff + 1.0
+def test_empty_parsed_raises_gemini_error():
+    client = _mock_client_returning(None)
+    with patch("core.api_client.genai.Client", return_value=client):
+        with pytest.raises(GeminiAPIError) as exc:
+            generate_refactoring("persona", "instr", "code", api_key="KEY")
+    assert "parse" in str(exc.value).lower()
+    client.models.generate_content.assert_called_once()
 
-def test_generate_refactoring_retry_429():
-    mock_response = Mock()
-    mock_response.status_code = 429
-    mock_response.text = "Rate Limit Exceeded"
-    
-    with patch("requests.post", return_value=mock_response) as mock_post, \
-         patch("time.sleep") as mock_sleep:
-        with pytest.raises(APIRateLimitError) as exc_info:
-            generate_refactoring(
-                persona_preamble="You are a developer.",
-                base_instruction="Refactor this",
-                code_snippet="public class Main {}",
-                api_key="TEST_API_KEY"
-            )
-        assert "status code 429 after 5 attempts" in str(exc_info.value)
-        assert mock_post.call_count == 5
-        assert mock_sleep.call_count == 4
-        
-        # Verify backoff values with additional 30 seconds
-        calls = [call[0][0] for call in mock_sleep.call_args_list]
-        for idx, sleep_time in enumerate(calls):
-            attempt = idx + 1
-            base_backoff = 2 ** (attempt - 1)
-            expected_min = base_backoff + 30.0
-            expected_max = base_backoff + 31.0
-            assert expected_min <= sleep_time <= expected_max
 
-def test_generate_refactoring_retry_network_error():
-    with patch("requests.post", side_effect=requests.RequestException("Connection error")) as mock_post, \
-         patch("time.sleep") as mock_sleep:
-        with pytest.raises(APITimeoutError) as exc_info:
-            generate_refactoring(
-                persona_preamble="You are a developer.",
-                base_instruction="Refactor this",
-                code_snippet="public class Main {}",
-                api_key="TEST_API_KEY"
-            )
-        assert "network errors after 5 attempts" in str(exc_info.value)
-        assert mock_post.call_count == 5
-        assert mock_sleep.call_count == 4
-        
-        # Verify backoff values
-        calls = [call[0][0] for call in mock_sleep.call_args_list]
-        for idx, sleep_time in enumerate(calls):
-            attempt = idx + 1
-            base_backoff = 2 ** (attempt - 1)
-            assert base_backoff <= sleep_time <= base_backoff + 1.0
+def test_empty_refactored_code_raises_gemini_error():
+    client = _mock_client_returning(RefactorResult(refactored_code=""))
+    with patch("core.api_client.genai.Client", return_value=client):
+        with pytest.raises(GeminiAPIError):
+            generate_refactoring("persona", "instr", "code", api_key="KEY")
+
+
+def test_terminal_client_error_400():
+    err = errors.ClientError(400, {"error": {"message": "bad request", "code": 400}})
+    client = _mock_client_raising(err)
+    with patch("core.api_client.genai.Client", return_value=client):
+        with pytest.raises(GeminiAPIError) as exc:
+            generate_refactoring("persona", "instr", "code", api_key="KEY")
+    assert "terminal status code 400" in str(exc.value)
+    client.models.generate_content.assert_called_once()
+
+
+def test_retry_on_500_then_raises():
+    err = errors.ServerError(500, {"error": {"message": "boom", "code": 500}})
+    client = _mock_client_raising(err)
+    with patch("core.api_client.genai.Client", return_value=client), \
+         patch("core.api_client.time.sleep") as mock_sleep:
+        with pytest.raises(GeminiAPIError) as exc:
+            generate_refactoring("persona", "instr", "code", api_key="KEY")
+    assert "status code 500 after 5 attempts" in str(exc.value)
+    assert client.models.generate_content.call_count == 5
+    assert mock_sleep.call_count == 4
+    for idx, c in enumerate(mock_sleep.call_args_list):
+        attempt = idx + 1
+        base = 2 ** (attempt - 1)
+        sleep_time = c[0][0]
+        assert base <= sleep_time <= base + 1.0
+
+
+def test_retry_on_429_then_raises():
+    err = errors.ClientError(429, {"error": {"message": "rate", "code": 429}})
+    client = _mock_client_raising(err)
+    with patch("core.api_client.genai.Client", return_value=client), \
+         patch("core.api_client.time.sleep") as mock_sleep:
+        with pytest.raises(APIRateLimitError) as exc:
+            generate_refactoring("persona", "instr", "code", api_key="KEY")
+    assert "status code 429 after 5 attempts" in str(exc.value)
+    assert client.models.generate_content.call_count == 5
+    assert mock_sleep.call_count == 4
+    for idx, c in enumerate(mock_sleep.call_args_list):
+        attempt = idx + 1
+        base = 2 ** (attempt - 1)
+        sleep_time = c[0][0]
+        assert base + 30.0 <= sleep_time <= base + 31.0
+
+
+def test_retry_on_network_error_then_raises():
+    client = _mock_client_raising(httpx.ConnectError("connection failed"))
+    with patch("core.api_client.genai.Client", return_value=client), \
+         patch("core.api_client.time.sleep") as mock_sleep:
+        with pytest.raises(APITimeoutError) as exc:
+            generate_refactoring("persona", "instr", "code", api_key="KEY")
+    assert "network errors after 5 attempts" in str(exc.value)
+    assert client.models.generate_content.call_count == 5
+    assert mock_sleep.call_count == 4
+
+
+def test_retry_then_success():
+    err = errors.ServerError(503, {"error": {"message": "unavailable", "code": 503}})
+    good = Mock()
+    good.parsed = RefactorResult(refactored_code="public class Ok {}")
+    client = MagicMock()
+    client.models.generate_content.side_effect = [err, good]
+    with patch("core.api_client.genai.Client", return_value=client), \
+         patch("core.api_client.time.sleep") as mock_sleep:
+        result = generate_refactoring("persona", "instr", "code", api_key="KEY")
+    assert result == "public class Ok {}"
+    assert client.models.generate_content.call_count == 2
+    assert mock_sleep.call_count == 1
 
 
 def test_logging_lazy_initialization():
-    # Test that logging/directory setup is lazy.
-    # We patch os.makedirs to verify it is called during execution when a log statement is reached.
     import core.api_client
-    core.api_client._logger = None  # Reset global state for testing
+    core.api_client._logger = None  # reset global state
+    client = _mock_client_raising(httpx.ConnectError("timeout"))
     with patch("core.api_client.os.makedirs") as mock_makedirs, \
-         patch("requests.post") as mock_post, \
-         patch("time.sleep") as mock_sleep:
-        # Cause a network error so it logs
-        mock_post.side_effect = requests.RequestException("Timeout")
-        
+         patch("core.api_client.genai.Client", return_value=client), \
+         patch("core.api_client.time.sleep"):
         with pytest.raises(Exception):
-            generate_refactoring("", "instruction", "code", "key")
-        
-        mock_makedirs.assert_called_with("logs", exist_ok=True)
-
-
-
-
-
-def test_generate_refactoring_invalid_json_decode():
-    mock_response = Mock()
-    mock_response.status_code = 200
-    # Simulate a JSONDecodeError when calling json()
-    mock_response.json.side_effect = ValueError("Invalid control character")
-    
-    with patch("requests.post", return_value=mock_response):
-        with pytest.raises(GeminiAPIError) as exc_info:
-            generate_refactoring("", "instruction", "code", "key")
-        assert "Failed to decode response JSON" in str(exc_info.value)
-
-
-def test_generate_refactoring_type_error_json():
-    mock_response = Mock()
-    mock_response.status_code = 200
-    # candidates is a string instead of a list, causing TypeError when subscripting candidates[0]
-    mock_response.json.return_value = {"candidates": "invalid_type_string"}
-    
-    with patch("requests.post", return_value=mock_response):
-        with pytest.raises(GeminiAPIError) as exc_info:
-            generate_refactoring("", "instruction", "code", "key")
-        assert "Failed to parse response JSON" in str(exc_info.value)
-
+            generate_refactoring("", "instr", "code", "key")
+    mock_makedirs.assert_called_with("logs", exist_ok=True)

@@ -25,12 +25,21 @@ def _get_logger() -> logging.Logger:
     return _logger
 
 class Defects4JManager:
-    def __init__(self, d4j_bin: str = "defects4j", java_home: str | None = None):
+    def __init__(self, d4j_bin: str = "defects4j", java_home: str | None = None, perl5lib: str | None = None):
         self.d4j_bin = d4j_bin
         self.java_home = java_home
+        self.perl5lib = perl5lib
 
     def _get_env(self) -> dict:
         env = os.environ.copy()
+
+        # Optionally prepend a local perl5 lib (where defects4j's Perl deps live).
+        # Configured per-machine via settings ("perl5lib"); no hardcoded path so
+        # it stays portable across machines.
+        if self.perl5lib:
+            existing = env.get("PERL5LIB", "")
+            env["PERL5LIB"] = f"{self.perl5lib}{os.pathsep}{existing}" if existing else self.perl5lib
+
         if self.java_home:
             java_home_abs = os.path.abspath(self.java_home)
             env["JAVA_HOME"] = java_home_abs
@@ -90,7 +99,10 @@ class Defects4JManager:
             logger.debug(f"Command stderr: {stderr}")
         except subprocess.TimeoutExpired as e:
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                if hasattr(os, "killpg") and hasattr(os, "getpgid"):
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                else:
+                    proc.kill()
             except OSError:
                 pass
             proc.wait()
@@ -121,3 +133,19 @@ class Defects4JManager:
         except Exception as e:
             logger.error(f"Error executing export: {e}")
         return "target/classes"
+
+    def export_source_dir(self, workspace_path: str) -> str:
+        cmd = [self.d4j_bin, "export", "-p", "dir.src.classes"]
+        logger = _get_logger()
+        logger.info(f"Running command: {' '.join(cmd)} in {workspace_path}")
+        try:
+            res = subprocess.run(cmd, cwd=workspace_path, env=self._get_env(), capture_output=True)
+            stdout = res.stdout.decode('utf-8', errors='replace')
+            stderr = res.stderr.decode('utf-8', errors='replace')
+            logger.debug(f"Command stdout: {stdout}")
+            logger.debug(f"Command stderr: {stderr}")
+            if res.returncode == 0:
+                return stdout.strip()
+        except Exception as e:
+            logger.error(f"Error executing export: {e}")
+        return "src/main/java"
