@@ -54,9 +54,23 @@ class Defects4JManager:
     def checkout(self, project: str, version: str, workspace_path: str):
         if os.path.exists(workspace_path):
             try:
+                for root, dirs, files in os.walk(workspace_path):
+                    for d in dirs:
+                        try: os.chmod(os.path.join(root, d), 0o777)
+                        except: pass
+                    for f in files:
+                        try: os.chmod(os.path.join(root, f), 0o777)
+                        except: pass
                 shutil.rmtree(workspace_path)
             except Exception:
-                pass
+                if "defects4j.bat" in self.d4j_bin:
+                    try:
+                        proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                        rel = os.path.relpath(os.path.abspath(workspace_path), proj_root)
+                        container_path = "/app/" + rel.replace("\\", "/")
+                        subprocess.run(["docker", "exec", "-u", "root", "defects4j-container", "rm", "-rf", container_path], capture_output=True)
+                    except Exception:
+                        pass
 
         cmd = [self.d4j_bin, "checkout", "-p", project, "-v", f"{version}f", "-w", workspace_path]
         logger = _get_logger()
@@ -65,6 +79,18 @@ class Defects4JManager:
         logger.debug(f"Command stdout: {res.stdout.decode('utf-8', errors='replace')}")
         logger.debug(f"Command stderr: {res.stderr.decode('utf-8', errors='replace')}")
         if res.returncode != 0:
+            git_dir = os.path.join(workspace_path, ".git")
+            if os.path.exists(git_dir):
+                logger.warning("Checkout returned non-zero. Attempting recovery via manual git clean and checkout.")
+                try:
+                    subprocess.run(["git", "clean", "-fdx"], cwd=workspace_path, capture_output=True)
+                    target_branch = f"D4J_{project}_{version}_FIXED_VERSION"
+                    cres = subprocess.run(["git", "checkout", "-f", target_branch], cwd=workspace_path, capture_output=True)
+                    if cres.returncode == 0:
+                        logger.info(f"Successfully recovered checkout for {project} {version}")
+                        return
+                except Exception as e:
+                    logger.error(f"Fallback checkout failed: {e}")
             raise RuntimeError(f"defects4j checkout failed with exit code {res.returncode}")
 
     def compile(self, workspace_path: str) -> bool:

@@ -69,7 +69,8 @@ class SonarQubeManager:
             f"-Dsonar.projectName={project_name}",
             f"-Dsonar.sources={source_file}",
             f"-Dsonar.host.url={self.url}",
-            f"-Dsonar.java.binaries={classes_dir}"
+            f"-Dsonar.java.binaries={classes_dir}",
+            "-Dsonar.scm.exclusions.disabled=true"
         ]
         logger = _get_logger()
         cmd_for_log = [
@@ -80,7 +81,7 @@ class SonarQubeManager:
         try:
             env = os.environ.copy()
             env["SONAR_TOKEN"] = self.token
-            res = subprocess.run(cmd, env=env, capture_output=True, timeout=180)
+            res = subprocess.run(cmd, env=env, capture_output=True, timeout=600)
             logger.debug(f"sonar-scanner exit code: {res.returncode}")
             if res.returncode != 0:
                 stdout_str = res.stdout.decode('utf-8', errors='replace')

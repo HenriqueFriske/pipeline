@@ -1,0 +1,3 @@
+id_rodada,trecho,refatoracao_tipo,persona,replica,status,complexity_base,complexity_pos,complexity_delta,smells_base,smells_pos,smells_delta,tempo_execucao_seg,token_count
+1,Math_1_ExtractMethod_1,ExtractMethod,P-1,1,FALHA_TESTES_TIMEOUT,336,,,117,,,988.89,11776
+2,Math_1_ExtractMethod_1,ExtractMethod,P-1,2,ERRO_SISTEMA,,,,,,,228.74,0

@@ -1,0 +1,9 @@
+[
+  {
+    "trecho": "Math_1_ExtractMethod_1",
+    "project": "Math",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optim/nonlinear/scalar/noderiv/BOBYQAOptimizer.java",
+    "refatoracao_tipo": "ExtractMethod"
+  }
+]

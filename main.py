@@ -16,8 +16,7 @@ PERSONAS = {
     "P-1": "You are an experienced artisan baker specializing in sourdough breads and traditional pastries. You have no knowledge of software engineering, programming, or computer science.",
     "P-2": "",
     "P-3": "You are a developer.",
-    "P-4": "You are a Senior Java Software Architect and Clean Code expert.",
-    "P-5": "You are a Senior Java Software Architect and Clean Code expert. You are fully contextualized within the project architecture, adhering to its specific design patterns, dependency structures, and development guidelines."
+    "P-4": "You are a Senior Java Software Architect and Clean Code expert."
 }
 
 # Lazy logger setup
@@ -99,13 +98,21 @@ def run_pipeline(
         snippets = json.load(f)
 
     # 2. Setup managers
+    d4j_path = settings["defects4j_path"]
+    if os.path.exists(d4j_path):
+        d4j_path = os.path.abspath(d4j_path)
+        
+    sonar_path = settings["sonar_scanner_path"]
+    if os.path.exists(sonar_path):
+        sonar_path = os.path.abspath(sonar_path)
+
     sonar_mgr = core.sonarqube_anal.SonarQubeManager(
         url=settings["sonar_url"],
         token=settings["sonar_token"],
-        scanner_bin=settings["sonar_scanner_path"]
+        scanner_bin=sonar_path
     )
     d4j_mgr = core.defects4j_mgr.Defects4JManager(
-        d4j_bin=settings["defects4j_path"],
+        d4j_bin=d4j_path,
         java_home=settings.get("java_home"),
         perl5lib=settings.get("perl5lib")
     )
@@ -290,6 +297,18 @@ def run_pipeline(
                     }
                     ledger_mgr.write_row(row_data)
 
+                    # Save refactored code to persistent file
+                    if 'refactored_code' in locals() and refactored_code:
+                        os.makedirs("refactored_code", exist_ok=True)
+                        safe_persona = persona_key.replace('-', '')
+                        refac_filename = f"refactored_code/{snippet['trecho']}_P{safe_persona}_R{replica}_{status}.java"
+                        with open(refac_filename, "w", encoding="utf-8") as f_out:
+                            f_out.write(refactored_code)
+
+                    # Save checkpoint to text file
+                    with open("checkpoint.txt", "w", encoding="utf-8") as f_chk:
+                        f_chk.write(str(id_rodada))
+
                     # Keep track of durations for ETA
                     round_times.append(tempo_execucao_seg)
                     # Update last failure
@@ -336,4 +355,7 @@ def run_pipeline(
 
 
 if __name__ == "__main__":
-    run_pipeline()
+    settings_arg = sys.argv[1] if len(sys.argv) > 1 else "config/settings.json"
+    snippets_arg = sys.argv[2] if len(sys.argv) > 2 else "config/snippets.json"
+    ledger_arg = sys.argv[3] if len(sys.argv) > 3 else "checkpoint_ledger.csv"
+    run_pipeline(settings_path=settings_arg, snippets_path=snippets_arg, ledger_path=ledger_arg)

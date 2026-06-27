@@ -1,214 +1,212 @@
 [
   {
-    "trecho": "Math_1_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_1",
     "project": "Math",
     "version": "1",
-    "file_path": "src/main/java/org/apache/commons/math3/fraction/Fraction.java",
+    "file_path": "src/main/java/org/apache/commons/math3/optim/nonlinear/scalar/noderiv/BOBYQAOptimizer.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_2_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_2",
     "project": "Math",
-    "version": "2",
-    "file_path": "src/main/java/org/apache/commons/math3/distribution/HypergeometricDistribution.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/BOBYQAOptimizer.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_3_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_3",
     "project": "Math",
-    "version": "3",
-    "file_path": "src/main/java/org/apache/commons/math3/util/ArithmeticUtils.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/linear/SingularValueDecomposition.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_4_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_4",
     "project": "Math",
-    "version": "4",
-    "file_path": "src/main/java/org/apache/commons/math3/geometry/euclidean/threed/SubLine.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optim/nonlinear/scalar/noderiv/BOBYQAOptimizer.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_5_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_5",
     "project": "Math",
-    "version": "5",
-    "file_path": "src/main/java/org/apache/commons/math3/complex/Complex.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/BOBYQAOptimizer.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_6_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_6",
     "project": "Math",
-    "version": "6",
-    "file_path": "src/main/java/org/apache/commons/math3/linear/Array2DRowRealMatrix.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/ode/nonstiff/GraggBulirschStoerIntegrator.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_7_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_7",
     "project": "Math",
-    "version": "7",
-    "file_path": "src/main/java/org/apache/commons/math3/ode/AbstractIntegrator.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optim/nonlinear/scalar/noderiv/BOBYQAOptimizer.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_8_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_8",
     "project": "Math",
-    "version": "8",
-    "file_path": "src/main/java/org/apache/commons/math3/distribution/DiscreteDistribution.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/BOBYQAOptimizer.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_9_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_9",
     "project": "Math",
-    "version": "9",
-    "file_path": "src/main/java/org/apache/commons/math3/geometry/euclidean/threed/Line.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/linear/EigenDecomposition.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_10_ExtractMethod",
+    "trecho": "Math_1_ExtractMethod_10",
     "project": "Math",
-    "version": "10",
-    "file_path": "src/main/java/org/apache/commons/math3/analysis/solvers/BisectionSolver.java",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/fitting/leastsquares/LevenbergMarquardtOptimizer.java",
     "refatoracao_tipo": "ExtractMethod"
   },
   {
-    "trecho": "Math_11_ExtractMethod",
+    "trecho": "Math_1_ReplaceMagicNumber_1",
     "project": "Math",
-    "version": "11",
-    "file_path": "src/main/java/org/apache/commons/math3/distribution/MultivariateNormalDistribution.java",
-    "refatoracao_tipo": "ExtractMethod"
-  },
-  {
-    "trecho": "Math_12_ExtractMethod",
-    "project": "Math",
-    "version": "12",
-    "file_path": "src/main/java/org/apache/commons/math3/random/BitsStreamGenerator.java",
-    "refatoracao_tipo": "ExtractMethod"
-  },
-  {
-    "trecho": "Math_13_ExtractMethod",
-    "project": "Math",
-    "version": "13",
-    "file_path": "src/main/java/org/apache/commons/math3/optimization/general/AbstractLeastSquaresOptimizer.java",
-    "refatoracao_tipo": "ExtractMethod"
-  },
-  {
-    "trecho": "Math_14_ExtractMethod",
-    "project": "Math",
-    "version": "14",
-    "file_path": "src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java",
-    "refatoracao_tipo": "ExtractMethod"
-  },
-  {
-    "trecho": "Math_15_ExtractMethod",
-    "project": "Math",
-    "version": "15",
+    "version": "1",
     "file_path": "src/main/java/org/apache/commons/math3/util/FastMath.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "refatoracao_tipo": "ReplaceMagicNumber"
   },
   {
-    "trecho": "Math_16_ExtractMethod",
+    "trecho": "Math_1_ReplaceMagicNumber_2",
     "project": "Math",
-    "version": "16",
-    "file_path": "src/main/java/org/apache/commons/math3/util/FastMath.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/geometry/euclidean/threed/FieldRotation.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
   },
   {
-    "trecho": "Math_17_ExtractMethod",
+    "trecho": "Math_1_ReplaceMagicNumber_3",
     "project": "Math",
-    "version": "17",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/geometry/euclidean/threed/Rotation.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
+  },
+  {
+    "trecho": "Math_1_ReplaceMagicNumber_4",
+    "project": "Math",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/geometry/euclidean/threed/SphericalCoordinates.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
+  },
+  {
+    "trecho": "Lang_1_ReplaceMagicNumber_5",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/Conversion.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
+  },
+  {
+    "trecho": "Math_1_ReplaceMagicNumber_6",
+    "project": "Math",
+    "version": "1",
     "file_path": "src/main/java/org/apache/commons/math3/dfp/Dfp.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "refatoracao_tipo": "ReplaceMagicNumber"
   },
   {
-    "trecho": "Math_18_ExtractMethod",
+    "trecho": "Math_1_ReplaceMagicNumber_7",
     "project": "Math",
-    "version": "18",
-    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optim/nonlinear/scalar/noderiv/BOBYQAOptimizer.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
   },
   {
-    "trecho": "Math_19_ExtractMethod",
+    "trecho": "Math_1_ReplaceMagicNumber_8",
     "project": "Math",
-    "version": "19",
-    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/BOBYQAOptimizer.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
   },
   {
-    "trecho": "Math_20_ExtractMethod",
+    "trecho": "Math_1_ReplaceMagicNumber_9",
     "project": "Math",
-    "version": "20",
-    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/random/ISAACRandom.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
   },
   {
-    "trecho": "Math_21_ExtractMethod",
+    "trecho": "Math_1_ReplaceMagicNumber_10",
     "project": "Math",
-    "version": "21",
-    "file_path": "src/main/java/org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
   },
   {
-    "trecho": "Math_22_ExtractMethod",
-    "project": "Math",
-    "version": "22",
-    "file_path": "src/main/java/org/apache/commons/math3/distribution/FDistribution.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "trecho": "Lang_1_ReplaceConditionalWithPolymorphism_1",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/StringUtils.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   },
   {
-    "trecho": "Math_23_ExtractMethod",
+    "trecho": "Math_1_ReplaceConditionalWithPolymorphism_2",
     "project": "Math",
-    "version": "23",
-    "file_path": "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/util/FastMath.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   },
   {
-    "trecho": "Math_24_ExtractMethod",
+    "trecho": "Math_1_ReplaceConditionalWithPolymorphism_3",
     "project": "Math",
-    "version": "24",
-    "file_path": "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optim/nonlinear/scalar/noderiv/BOBYQAOptimizer.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   },
   {
-    "trecho": "Math_25_ExtractMethod",
+    "trecho": "Math_1_ReplaceConditionalWithPolymorphism_4",
     "project": "Math",
-    "version": "25",
-    "file_path": "src/main/java/org/apache/commons/math3/optimization/fitting/HarmonicFitter.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/optimization/direct/BOBYQAOptimizer.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   },
   {
-    "trecho": "Math_26_ExtractMethod",
+    "trecho": "Math_1_ReplaceConditionalWithPolymorphism_5",
     "project": "Math",
-    "version": "26",
-    "project": "Math",
-    "version": "26",
-    "file_path": "src/main/java/org/apache/commons/math3/fraction/Fraction.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/dfp/Dfp.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   },
   {
-    "trecho": "Math_27_ExtractMethod",
-    "project": "Math",
-    "version": "27",
-    "file_path": "src/main/java/org/apache/commons/math3/fraction/Fraction.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "trecho": "Lang_1_ReplaceConditionalWithPolymorphism_6",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/ArrayUtils.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   },
   {
-    "trecho": "Math_28_ExtractMethod",
-    "project": "Math",
-    "version": "28",
-    "file_path": "src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "trecho": "Lang_1_ReplaceConditionalWithPolymorphism_7",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/builder/EqualsBuilder.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   },
   {
-    "trecho": "Math_29_ExtractMethod",
+    "trecho": "Math_1_ReplaceConditionalWithPolymorphism_8",
     "project": "Math",
-    "version": "29",
-    "file_path": "src/main/java/org/apache/commons/math3/linear/OpenMapRealVector.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/util/MathArrays.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   },
   {
-    "trecho": "Math_30_ExtractMethod",
-    "project": "Math",
-    "version": "30",
-    "file_path": "src/main/java/org/apache/commons/math3/stat/inference/MannWhitneyUTest.java",
-    "refatoracao_tipo": "ExtractMethod"
+    "trecho": "Lang_1_ReplaceConditionalWithPolymorphism_9",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/BooleanUtils.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
+  },
+  {
+    "trecho": "Lang_1_ReplaceConditionalWithPolymorphism_10",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/builder/CompareToBuilder.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
   }
 ]

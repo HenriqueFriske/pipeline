@@ -17,12 +17,20 @@ def find_candidates(settings_path: str, targets_path: str, output_path: str = "c
     with open(targets_path, encoding="utf-8") as f:
         targets = json.load(f)
 
+    d4j_path = settings["defects4j_path"]
+    if os.path.exists(d4j_path):
+        d4j_path = os.path.abspath(d4j_path)
+        
+    sonar_path = settings["sonar_scanner_path"]
+    if os.path.exists(sonar_path):
+        sonar_path = os.path.abspath(sonar_path)
+
     d4j = core.defects4j_mgr.Defects4JManager(
-        d4j_bin=settings["defects4j_path"], java_home=settings.get("java_home"),
+        d4j_bin=d4j_path, java_home=settings.get("java_home"),
         perl5lib=settings.get("perl5lib"))
     sonar = core.sonarqube_anal.SonarQubeManager(
         url=settings["sonar_url"], token=settings["sonar_token"],
-        scanner_bin=settings["sonar_scanner_path"])
+        scanner_bin=sonar_path)
     workspace_root = settings["workspace_root"]
 
     all_candidates = []

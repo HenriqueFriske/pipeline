@@ -51,13 +51,14 @@ def test_scan_success(mock_run):
         "-Dsonar.projectName=my_name",
         "-Dsonar.sources=src/file.java",
         "-Dsonar.host.url=http://sonar.test",
-        "-Dsonar.java.binaries=build/classes"
+        "-Dsonar.java.binaries=build/classes",
+        "-Dsonar.scm.exclusions.disabled=true"
     ]
     mock_run.assert_called_once()
     args, kwargs = mock_run.call_args
     assert args[0] == expected_args
     assert kwargs.get("capture_output") is True
-    assert kwargs.get("timeout") == 180
+    assert kwargs.get("timeout") == 600
     assert kwargs.get("env", {}).get("SONAR_TOKEN") == "my-token"
 
 @patch("subprocess.run")

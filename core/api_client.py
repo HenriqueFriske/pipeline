@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 # Gemini 3.x model. Sampling params (temperature/top_p/top_k) are discouraged on
 # 3.x; reasoning depth is controlled via thinking_level instead.
-MODEL = "gemini-3.5-flash"
+MODEL = "gemini-2.5-flash"
 THINKING_LEVEL = "high"
 
 
@@ -83,7 +83,6 @@ def generate_refactoring(
         response_mime_type="application/json",
         response_schema=RefactorResult,
         system_instruction=persona_preamble or None,
-        thinking_config=types.ThinkingConfig(thinking_level=THINKING_LEVEL),
     )
     contents = f"{base_instruction}\n\n{code_snippet}"
 
