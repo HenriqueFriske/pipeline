@@ -125,9 +125,9 @@ def main():
             
             # Save raw response text and metadata
             raw_path = os.path.join(raw_responses_dir, f"{cand_id}_raw.json")
-            response_dict = response.model_dump()
+            raw_json_str = response.model_dump_json(indent=2)
             with open(raw_path, "w", encoding="utf-8") as f_raw:
-                json.dump(response_dict, f_raw, indent=2)
+                f_raw.write(raw_json_str)
             print(f"Saved raw response to: {raw_path}")
             
             # Extract tokens

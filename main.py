@@ -185,8 +185,14 @@ def run_pipeline(
         if rid in completed_ids:
             continue
 
-        refac_file = f"refactored_code/round_{rid}_refac.java"
-        raw_json_file = f"logs/raw_responses/round_{rid}_raw.json"
+        snippet_id = snippet["trecho"]
+        refac_dir = os.path.join("refactored_code", snippet_id, persona_key, f"replica_{replica}")
+        raw_dir = os.path.join("logs/raw_responses", snippet_id, persona_key, f"replica_{replica}")
+        os.makedirs(refac_dir, exist_ok=True)
+        os.makedirs(raw_dir, exist_ok=True)
+        
+        refac_file = os.path.join(refac_dir, "code.java")
+        raw_json_file = os.path.join(raw_dir, "response.json")
 
         # Check if already generated in case we are resuming
         if os.path.exists(refac_file) and os.path.exists(raw_json_file):
@@ -223,9 +229,9 @@ def run_pipeline(
             )
 
             # Save raw response metadata and text
-            response_dict = response.model_dump()
+            raw_json_str = response.model_dump_json(indent=2)
             with open(raw_json_file, "w", encoding="utf-8") as f_raw:
-                json.dump(response_dict, f_raw, indent=2)
+                f_raw.write(raw_json_str)
 
             # Parse and save code
             result = response.parsed
@@ -272,8 +278,12 @@ def run_pipeline(
         round_start_time = time.time()
         logger.info(f"--- Processing Metrics for Round {rid}/{total_rounds} ---")
 
-        refac_file = f"refactored_code/round_{rid}_refac.java"
-        raw_json_file = f"logs/raw_responses/round_{rid}_raw.json"
+        snippet_id = snippet["trecho"]
+        refac_dir = os.path.join("refactored_code", snippet_id, persona_key, f"replica_{replica}")
+        raw_dir = os.path.join("logs/raw_responses", snippet_id, persona_key, f"replica_{replica}")
+        
+        refac_file = os.path.join(refac_dir, "code.java")
+        raw_json_file = os.path.join(raw_dir, "response.json")
         
         status = "VALIDO"
         complexity_base = None
