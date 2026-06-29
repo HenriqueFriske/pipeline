@@ -1,0 +1,63 @@
+--- original/src/main/java/org/apache/commons/math3/optim/BaseMultivariateOptimizer.java
++++ refactored/src/main/java/org/apache/commons/math3/optim/BaseMultivariateOptimizer.java
+@@ -127,30 +127,38 @@
+     private void checkParameters() {
+         if (start != null) {
+             final int dim = start.length;
+-            if (lowerBound != null) {
+-                if (lowerBound.length != dim) {
+-                    throw new DimensionMismatchException(lowerBound.length, dim);
+-                }
+-                for (int i = 0; i < dim; i++) {
+-                    final double v = start[i];
+-                    final double lo = lowerBound[i];
+-                    if (v < lo) {
+-                        throw new NumberIsTooSmallException(v, lo, true);
+-                    }
+-                }
++            checkLowerBounds(dim);
++            checkUpperBounds(dim);
++        }
++    }
++
++    private void checkLowerBounds(final int dim) {
++        if (lowerBound != null) {
++            if (lowerBound.length != dim) {
++                throw new DimensionMismatchException(lowerBound.length, dim);
+             }
+-            if (upperBound != null) {
+-                if (upperBound.length != dim) {
+-                    throw new DimensionMismatchException(upperBound.length, dim);
+-                }
+-                for (int i = 0; i < dim; i++) {
+-                    final double v = start[i];
+-                    final double hi = upperBound[i];
+-                    if (v > hi) {
+-                        throw new NumberIsTooLargeException(v, hi, true);
+-                    }
++            for (int i = 0; i < dim; i++) {
++                final double v = start[i];
++                final double lo = lowerBound[i];
++                if (v < lo) {
++                    throw new NumberIsTooSmallException(v, lo, true);
+                 }
+             }
+         }
+     }
+-}
++
++    private void checkUpperBounds(final int dim) {
++        if (upperBound != null) {
++            if (upperBound.length != dim) {
++                throw new DimensionMismatchException(upperBound.length, dim);
++            }
++            for (int i = 0; i < dim; i++) {
++                final double v = start[i];
++                final double hi = upperBound[i];
++                if (v > hi) {
++                    throw new NumberIsTooLargeException(v, hi, true);
++                }
++            }
++        }
++    }
++}

@@ -1,0 +1,25 @@
+--- original/src/main/java/org/apache/commons/math3/random/UniformRandomGenerator.java
++++ refactored/src/main/java/org/apache/commons/math3/random/UniformRandomGenerator.java
+@@ -36,6 +36,12 @@
+     /** Square root of three. */
+     private static final double SQRT3 = FastMath.sqrt(3.0);
+ 
++    /** Scaling factor for mapping [0, 1] to [-1, 1]. */
++    private static final double SCALE_FACTOR = 2.0;
++
++    /** Shift factor for mapping [0, 1] to [-1, 1]. */
++    private static final double SHIFT_FACTOR = 1.0;
++
+     /** Underlying generator. */
+     private final RandomGenerator generator;
+ 
+@@ -52,7 +58,7 @@
+      * @return a random scalar with null mean and unit standard deviation
+      */
+     public double nextNormalizedDouble() {
+-        return SQRT3 * (2 * generator.nextDouble() - 1.0);
++        return SQRT3 * (SCALE_FACTOR * generator.nextDouble() - SHIFT_FACTOR);
+     }
+ 
+-}
++}

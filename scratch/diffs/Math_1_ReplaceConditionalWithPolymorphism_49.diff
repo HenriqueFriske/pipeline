@@ -1,0 +1,147 @@
+--- original/src/main/java/org/apache/commons/math3/fraction/ProperBigFractionFormat.java
++++ refactored/src/main/java/org/apache/commons/math3/fraction/ProperBigFractionFormat.java
+@@ -133,96 +133,76 @@
+      */
+     @Override
+     public BigFraction parse(final String source, final ParsePosition pos) {
+-        // try to parse improper BigFraction
+         BigFraction ret = super.parse(source, pos);
+         if (ret != null) {
+             return ret;
+         }
+ 
+         final int initialIndex = pos.getIndex();
+-
+-        // parse whitespace
+         parseAndIgnoreWhitespace(source, pos);
+ 
+-        // parse whole
+         BigInteger whole = parseNextBigInteger(source, pos);
+         if (whole == null) {
+-            // invalid integer number
+-            // set index back to initial, error index should already be set
+-            // character examined.
+             pos.setIndex(initialIndex);
+             return null;
+         }
+ 
+-        // parse whitespace
+         parseAndIgnoreWhitespace(source, pos);
+ 
+-        // parse numerator
+         BigInteger num = parseNextBigInteger(source, pos);
+-        if (num == null) {
+-            // invalid integer number
+-            // set index back to initial, error index should already be set
+-            // character examined.
++        if (num == null || num.compareTo(BigInteger.ZERO) < 0) {
+             pos.setIndex(initialIndex);
+             return null;
+         }
+ 
+-        if (num.compareTo(BigInteger.ZERO) < 0) {
+-            // minus signs should be leading, invalid expression
+-            pos.setIndex(initialIndex);
+-            return null;
+-        }
+-
+-        // parse '/'
+         final int startIndex = pos.getIndex();
+         final char c = parseNextCharacter(source, pos);
+-        switch (c) {
+-        case 0 :
+-            // no '/'
+-            // return num as a BigFraction
+-            return new BigFraction(num);
+-        case '/' :
+-            // found '/', continue parsing denominator
+-            break;
+-        default :
+-            // invalid '/'
+-            // set index back to initial, error index should be the last
+-            // character examined.
++        ParserStrategy strategy = ParserStrategy.getStrategy(c);
++        if (strategy == null) {
+             pos.setIndex(initialIndex);
+             pos.setErrorIndex(startIndex);
+             return null;
+         }
+ 
+-        // parse whitespace
+-        parseAndIgnoreWhitespace(source, pos);
+-
+-        // parse denominator
+-        final BigInteger den = parseNextBigInteger(source, pos);
+-        if (den == null) {
+-            // invalid integer number
+-            // set index back to initial, error index should already be set
+-            // character examined.
+-            pos.setIndex(initialIndex);
+-            return null;
+-        }
+-
+-        if (den.compareTo(BigInteger.ZERO) < 0) {
+-            // minus signs must be leading, invalid
+-            pos.setIndex(initialIndex);
+-            return null;
+-        }
+-
+-        boolean wholeIsNeg = whole.compareTo(BigInteger.ZERO) < 0;
+-        if (wholeIsNeg) {
+-            whole = whole.negate();
+-        }
+-        num = whole.multiply(den).add(num);
+-        if (wholeIsNeg) {
+-            num = num.negate();
+-        }
+-
+-        return new BigFraction(num, den);
+-
++        return strategy.parse(this, source, pos, whole, num, initialIndex);
++    }
++
++    private enum ParserStrategy {
++        END {
++            @Override
++            public BigFraction parse(ProperBigFractionFormat format, String source, ParsePosition pos, BigInteger whole, BigInteger num, int initialIndex) {
++                return new BigFraction(num);
++            }
++        },
++        FRACTION {
++            @Override
++            public BigFraction parse(ProperBigFractionFormat format, String source, ParsePosition pos, BigInteger whole, BigInteger num, int initialIndex) {
++                format.parseAndIgnoreWhitespace(source, pos);
++                BigInteger den = format.parseNextBigInteger(source, pos);
++                if (den == null || den.compareTo(BigInteger.ZERO) < 0) {
++                    pos.setIndex(initialIndex);
++                    return null;
++                }
++
++                boolean wholeIsNeg = whole.compareTo(BigInteger.ZERO) < 0;
++                if (wholeIsNeg) {
++                    whole = whole.negate();
++                }
++                num = whole.multiply(den).add(num);
++                if (wholeIsNeg) {
++                    num = num.negate();
++                }
++                return new BigFraction(num, den);
++            }
++        };
++
++        public abstract BigFraction parse(ProperBigFractionFormat format, String source, ParsePosition pos, BigInteger whole, BigInteger num, int initialIndex);
++
++        public static ParserStrategy getStrategy(char c) {
++            if (c == 0) return END;
++            if (c == '/') return FRACTION;
++            return null;
++        }
+     }
+ 
+     /**
+@@ -236,4 +216,4 @@
+         }
+         this.wholeFormat = format;
+     }
+-}
++}

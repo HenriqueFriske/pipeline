@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 # Gemini 3.x model. Sampling params (temperature/top_p/top_k) are discouraged on
 # 3.x; reasoning depth is controlled via thinking_level instead.
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3.1-flash-lite"
 THINKING_LEVEL = "high"
 
 

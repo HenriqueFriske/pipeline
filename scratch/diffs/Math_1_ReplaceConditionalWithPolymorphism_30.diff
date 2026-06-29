@@ -1,0 +1,126 @@
+--- original/src/main/java/org/apache/commons/math3/analysis/solvers/BrentSolver.java
++++ refactored/src/main/java/org/apache/commons/math3/analysis/solvers/BrentSolver.java
+@@ -92,30 +92,25 @@
+ 
+         verifySequence(min, initial, max);
+ 
+-        // Return the initial guess if it is good enough.
+         double yInitial = computeObjectiveValue(initial);
+         if (FastMath.abs(yInitial) <= functionValueAccuracy) {
+             return initial;
+         }
+ 
+-        // Return the first endpoint if it is good enough.
+         double yMin = computeObjectiveValue(min);
+         if (FastMath.abs(yMin) <= functionValueAccuracy) {
+             return min;
+         }
+ 
+-        // Reduce interval if min and initial bracket the root.
+         if (yInitial * yMin < 0) {
+             return brent(min, initial, yMin, yInitial);
+         }
+ 
+-        // Return the second endpoint if it is good enough.
+         double yMax = computeObjectiveValue(max);
+         if (FastMath.abs(yMax) <= functionValueAccuracy) {
+             return max;
+         }
+ 
+-        // Reduce interval if initial and max bracket the root.
+         if (yInitial * yMax < 0) {
+             return brent(initial, max, yInitial, yMax);
+         }
+@@ -123,22 +118,26 @@
+         throw new NoBracketingException(min, max, yMin, yMax);
+     }
+ 
+-    /**
+-     * Search for a zero inside the provided interval.
+-     * This implementation is based on the algorithm described at page 58 of
+-     * the book
+-     * <quote>
+-     *  <b>Algorithms for Minimization Without Derivatives</b>
+-     *  <it>Richard P. Brent</it>
+-     *  Dover 0-486-41998-3
+-     * </quote>
+-     *
+-     * @param lo Lower bound of the search interval.
+-     * @param hi Higher bound of the search interval.
+-     * @param fLo Function value at the lower bound of the search interval.
+-     * @param fHi Function value at the higher bound of the search interval.
+-     * @return the value where the function is zero.
+-     */
++    private interface InterpolationStrategy {
++        void compute(double a, double b, double c, double fa, double fb, double fc, double m, double s, double[] result);
++    }
++
++    private static class LinearInterpolation implements InterpolationStrategy {
++        public void compute(double a, double b, double c, double fa, double fb, double fc, double m, double s, double[] result) {
++            result[0] = 2 * m * s;
++            result[1] = 1 - s;
++        }
++    }
++
++    private static class QuadraticInterpolation implements InterpolationStrategy {
++        public void compute(double a, double b, double c, double fa, double fb, double fc, double m, double s, double[] result) {
++            double q = fa / fc;
++            double r = fb / fc;
++            result[0] = s * (2 * m * q * (q - r) - (b - a) * (r - 1));
++            result[1] = (q - 1) * (r - 1) * (s - 1);
++        }
++    }
++
+     private double brent(double lo, double hi,
+                          double fLo, double fHi) {
+         double a = lo;
+@@ -172,27 +171,16 @@
+             }
+             if (FastMath.abs(e) < tol ||
+                 FastMath.abs(fa) <= FastMath.abs(fb)) {
+-                // Force bisection.
+                 d = m;
+                 e = d;
+             } else {
+                 double s = fb / fa;
+-                double p;
+-                double q;
+-                // The equality test (a == c) is intentional,
+-                // it is part of the original Brent's method and
+-                // it should NOT be replaced by proximity test.
+-                if (a == c) {
+-                    // Linear interpolation.
+-                    p = 2 * m * s;
+-                    q = 1 - s;
+-                } else {
+-                    // Inverse quadratic interpolation.
+-                    q = fa / fc;
+-                    final double r = fb / fc;
+-                    p = s * (2 * m * q * (q - r) - (b - a) * (r - 1));
+-                    q = (q - 1) * (r - 1) * (s - 1);
+-                }
++                double[] pq = new double[2];
++                InterpolationStrategy strategy = (a == c) ? new LinearInterpolation() : new QuadraticInterpolation();
++                strategy.compute(a, b, c, fa, fb, fc, m, s, pq);
++                double p = pq[0];
++                double q = pq[1];
++
+                 if (p > 0) {
+                     q = -q;
+                 } else {
+@@ -202,9 +190,6 @@
+                 e = d;
+                 if (p >= 1.5 * m * q - FastMath.abs(tol * q) ||
+                     p >= FastMath.abs(0.5 * s * q)) {
+-                    // Inverse quadratic interpolation gives a value
+-                    // in the wrong direction, or progress is slow.
+-                    // Fall back to bisection.
+                     d = m;
+                     e = d;
+                 } else {
+@@ -231,4 +216,4 @@
+             }
+         }
+     }
+-}
++}

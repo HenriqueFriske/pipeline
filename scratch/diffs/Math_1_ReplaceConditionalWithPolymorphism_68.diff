@@ -1,0 +1,75 @@
+--- original/src/main/java/org/apache/commons/math3/primes/Primes.java
++++ refactored/src/main/java/org/apache/commons/math3/primes/Primes.java
+@@ -87,24 +87,45 @@
+             return n;
+         }
+ 
+-        // prepare entry in the +2, +4 loop:
+-        // n should not be a multiple of 3
++        return findNextPrime(n);
++    }
++
++    private static int findNextPrime(int n) {
+         final int rem = n % 3;
+-        if (0 == rem) { // if n % 3 == 0
+-            n += 2; // n % 3 == 2
+-        } else if (1 == rem) { // if n % 3 == 1
+-            // if (isPrime(n)) return n;
+-            n += 4; // n % 3 == 2
++        final NextPrimeStrategy strategy;
++        if (rem == 0) {
++            strategy = new StepTwoStrategy();
++        } else {
++            strategy = new StepFourStrategy();
+         }
+-        while (true) { // this loop skips all multiple of 3
+-            if (isPrime(n)) {
+-                return n;
++        return strategy.find(n);
++    }
++
++    private interface NextPrimeStrategy {
++        int find(int n);
++    }
++
++    private static class StepTwoStrategy implements NextPrimeStrategy {
++        public int find(int n) {
++            n += 2;
++            while (true) {
++                if (isPrime(n)) return n;
++                n += 2;
++                if (isPrime(n)) return n;
++                n += 4;
+             }
+-            n += 2; // n % 3 == 1
+-            if (isPrime(n)) {
+-                return n;
++        }
++    }
++
++    private static class StepFourStrategy implements NextPrimeStrategy {
++        public int find(int n) {
++            n += 4;
++            while (true) {
++                if (isPrime(n)) return n;
++                n += 2;
++                if (isPrime(n)) return n;
++                n += 4;
+             }
+-            n += 4; // n % 3 == 2
+         }
+     }
+ 
+@@ -120,11 +141,8 @@
+         if (n < 2) {
+             throw new MathIllegalArgumentException(LocalizedFormats.NUMBER_TOO_SMALL, n, 2);
+         }
+-        // slower than trial div unless we do an awful lot of computation
+-        // (then it finally gets JIT-compiled efficiently
+-        // List<Integer> out = PollardRho.primeFactors(n);
+         return SmallPrimes.trialDivision(n);
+ 
+     }
+ 
+-}
++}

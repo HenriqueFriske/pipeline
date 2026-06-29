@@ -77,7 +77,7 @@ class Defects4JManager:
         cmd = [self.d4j_bin, "checkout", "-p", project, "-v", f"{version}f", "-w", workspace_path]
         logger = _get_logger()
         logger.info(f"Running command: {' '.join(cmd)}")
-        res = subprocess.run(cmd, env=self._get_env(), capture_output=True)
+        res = subprocess.run(cmd, env=self._get_env(), capture_output=True, shell=os.name == 'nt', stdin=subprocess.DEVNULL if os.name == 'nt' else None)
         logger.debug(f"Command stdout: {res.stdout.decode('utf-8', errors='replace')}")
         logger.debug(f"Command stderr: {res.stderr.decode('utf-8', errors='replace')}")
         if res.returncode != 0:
@@ -99,7 +99,7 @@ class Defects4JManager:
         cmd = [self.d4j_bin, "compile"]
         logger = _get_logger()
         logger.info(f"Running command: {' '.join(cmd)} in {workspace_path}")
-        res = subprocess.run(cmd, cwd=workspace_path, env=self._get_env(), capture_output=True)
+        res = subprocess.run(cmd, cwd=workspace_path, env=self._get_env(), capture_output=True, shell=os.name == 'nt', stdin=subprocess.DEVNULL if os.name == 'nt' else None)
         logger.debug(f"Command stdout: {res.stdout.decode('utf-8', errors='replace')}")
         logger.debug(f"Command stderr: {res.stderr.decode('utf-8', errors='replace')}")
         return res.returncode == 0
@@ -116,7 +116,9 @@ class Defects4JManager:
             env=env,
             start_new_session=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            shell=os.name == 'nt',
+            stdin=subprocess.DEVNULL if os.name == 'nt' else None
         )
 
         try:
@@ -151,7 +153,7 @@ class Defects4JManager:
         logger = _get_logger()
         logger.info(f"Running command: {' '.join(cmd)} in {workspace_path}")
         try:
-            res = subprocess.run(cmd, cwd=workspace_path, env=self._get_env(), capture_output=True)
+            res = subprocess.run(cmd, cwd=workspace_path, env=self._get_env(), capture_output=True, shell=os.name == 'nt', stdin=subprocess.DEVNULL if os.name == 'nt' else None)
             stdout = res.stdout.decode('utf-8', errors='replace')
             stderr = res.stderr.decode('utf-8', errors='replace')
             logger.debug(f"Command stdout: {stdout}")
@@ -167,7 +169,7 @@ class Defects4JManager:
         logger = _get_logger()
         logger.info(f"Running command: {' '.join(cmd)} in {workspace_path}")
         try:
-            res = subprocess.run(cmd, cwd=workspace_path, env=self._get_env(), capture_output=True)
+            res = subprocess.run(cmd, cwd=workspace_path, env=self._get_env(), capture_output=True, shell=os.name == 'nt', stdin=subprocess.DEVNULL if os.name == 'nt' else None)
             stdout = res.stdout.decode('utf-8', errors='replace')
             stderr = res.stderr.decode('utf-8', errors='replace')
             logger.debug(f"Command stdout: {stdout}")

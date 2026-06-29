@@ -1,0 +1,28 @@
+--- original/src/main/java/org/apache/commons/math3/primes/PollardRho.java
++++ refactored/src/main/java/org/apache/commons/math3/primes/PollardRho.java
+@@ -91,7 +91,7 @@
+                     y = (int) ((y2 + cst) % n);
+                     final long divisor = FastMath.abs(x - y);
+                     if (0 == divisor) {
+-                        cst += SmallPrimes.PRIMES_LAST;
++                        cst = resetBrentParameters(x0, cst);
+                         k = -m;
+                         y = x0;
+                         r = 1;
+@@ -111,6 +111,10 @@
+             } while (k < r);
+             r = 2 * r;
+         } while (true);
++    }
++
++    private static int resetBrentParameters(int x0, int cst) {
++        return cst + SmallPrimes.PRIMES_LAST;
+     }
+ 
+     /**
+@@ -162,4 +166,4 @@
+         // gcd(a,a) = a, just "add" the common power of twos
+         return a << shift;
+     }
+-}
++}

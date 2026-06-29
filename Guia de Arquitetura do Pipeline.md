@@ -93,7 +93,7 @@ O programador deve parametrizar os seguintes preâmbulos de sistema exatos em in
 
 #### **Endpoint e Payload da API do Gemini:**
 
-* **URL de Requisição:** POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={API\_KEY}  
+* **URL de Requisição:** POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-preview-09-2025:generateContent?key={API\_KEY}  
 * **Headers Mandatórios:**  
   {  
     "Content-Type": "application/json"  

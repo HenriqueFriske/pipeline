@@ -1,0 +1,338 @@
+{
+  "ExtractMethod": [
+    {
+      "trecho": "Math_1_ExtractMethod_141",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/solvers/RiddersSolver.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 68,
+      "score": 20,
+      "signal": "cognitive_complexity=20",
+      "file_size_bytes": 5327
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_116",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/optim/BaseMultivariateOptimizer.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 127,
+      "score": 25,
+      "signal": "cognitive_complexity=25",
+      "file_size_bytes": 5401
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_121",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/integration/gauss/LegendreRuleFactory.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 36,
+      "score": 24,
+      "signal": "cognitive_complexity=24",
+      "file_size_bytes": 5466
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_156",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/primes/PollardRho.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 73,
+      "score": 19,
+      "signal": "cognitive_complexity=19",
+      "file_size_bytes": 5845
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_144",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/interpolation/BicubicSplineInterpolator.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 38,
+      "score": 19,
+      "signal": "cognitive_complexity=19",
+      "file_size_bytes": 5951
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_140",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/solvers/MullerSolver2.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 84,
+      "score": 20,
+      "signal": "cognitive_complexity=20",
+      "file_size_bytes": 6422
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_115",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/ode/nonstiff/RungeKuttaIntegrator.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 95,
+      "score": 25,
+      "signal": "cognitive_complexity=25",
+      "file_size_bytes": 6553
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_159",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/interpolation/SmoothingPolynomialBicubicSplineInterpolator.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 96,
+      "score": 18,
+      "signal": "cognitive_complexity=18",
+      "file_size_bytes": 6926
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_119",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/integration/gauss/HermiteRuleFactory.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 63,
+      "score": 24,
+      "signal": "cognitive_complexity=24",
+      "file_size_bytes": 7000
+    },
+    {
+      "trecho": "Math_1_ExtractMethod_182",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/genetics/CycleCrossover.java",
+      "refatoracao_tipo": "ExtractMethod",
+      "line": 120,
+      "score": 16,
+      "signal": "cognitive_complexity=16",
+      "file_size_bytes": 7472
+    }
+  ],
+  "ReplaceMagicNumber": [
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_194",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/random/UniformRandomGenerator.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 55,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 2117
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_201",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/stat/descriptive/rank/Median.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 45,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 2168
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_169",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/geometry/euclidean/twod/Euclidean2D.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 49,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 2388
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_167",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/geometry/euclidean/threed/Euclidean3D.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 49,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 2390
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_189",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/optim/univariate/SearchInterval.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 69,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 2825
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_110",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/interpolation/LinearInterpolator.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 54,
+      "score": 3,
+      "signal": "3 issues",
+      "file_size_bytes": 3390
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_163",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/genetics/BinaryChromosome.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 72,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 3547
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_181",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/ode/nonstiff/EulerStepInterpolator.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 86,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 3708
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_157",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/integration/gauss/SymmetricGaussIntegrator.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 93,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 3803
+    },
+    {
+      "trecho": "Math_1_ReplaceMagicNumber_195",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/random/Well1024a.java",
+      "refatoracao_tipo": "ReplaceMagicNumber",
+      "line": 103,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 3810
+    }
+  ],
+  "ReplaceConditionalWithPolymorphism": [
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_68",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/primes/Primes.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 74,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 4031
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_34",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/solvers/SecantSolver.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 75,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 5059
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_41",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/distribution/BetaDistribution.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 126,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 7620
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_50",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/fraction/ProperFractionFormat.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 135,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 8029
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_30",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/solvers/BrentSolver.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 84,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 8167
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_61",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/ode/events/EventFilter.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 105,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 8328
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_32",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/analysis/solvers/MullerSolver.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 84,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 8341
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_49",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/fraction/ProperBigFractionFormat.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 135,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 8454
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_39",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/distribution/AbstractIntegerDistribution.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 100,
+      "score": 1,
+      "signal": "1 issues",
+      "file_size_bytes": 8694
+    },
+    {
+      "trecho": "Math_1_ReplaceConditionalWithPolymorphism_16",
+      "project": "Math",
+      "version": "1",
+      "file_path": "temp_workspace/finder_Math_1/src/main/java/org/apache/commons/math3/distribution/TriangularDistribution.java",
+      "refatoracao_tipo": "ReplaceConditionalWithPolymorphism",
+      "line": 141,
+      "score": 3,
+      "signal": "3 issues",
+      "file_size_bytes": 8991
+    }
+  ]
+}

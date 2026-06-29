@@ -1,0 +1,30 @@
+--- original/src/main/java/org/apache/commons/math3/analysis/interpolation/LinearInterpolator.java
++++ refactored/src/main/java/org/apache/commons/math3/analysis/interpolation/LinearInterpolator.java
+@@ -30,6 +30,9 @@
+  * @version $Id$
+  */
+ public class LinearInterpolator implements UnivariateInterpolator {
++    /** Minimum number of points required for linear interpolation. */
++    private static final int MINIMUM_NUMBER_OF_POINTS = 2;
++
+     /**
+      * Computes a linear interpolating function for the data set.
+      *
+@@ -51,9 +54,9 @@
+             throw new DimensionMismatchException(x.length, y.length);
+         }
+ 
+-        if (x.length < 2) {
++        if (x.length < MINIMUM_NUMBER_OF_POINTS) {
+             throw new NumberIsTooSmallException(LocalizedFormats.NUMBER_OF_POINTS,
+-                                                x.length, 2, true);
++                                                x.length, MINIMUM_NUMBER_OF_POINTS, true);
+         }
+ 
+         // Number of intervals.  The number of data points is n + 1.
+@@ -77,4 +80,4 @@
+ 
+         return new PolynomialSplineFunction(x, polynomials);
+     }
+-}
++}

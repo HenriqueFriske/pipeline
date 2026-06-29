@@ -1,9 +1,9 @@
 {
   "api_key": "",
   "sonar_url": "http://localhost:9000",
-  "sonar_token": "",
-  "sonar_scanner_path": "sonar-scanner.sh",
-  "defects4j_path": "defects4j.sh",
+  "sonar_token": "squ_ddc0dcc1386bd2e45633b5cff083983e19e10fd5",
+  "sonar_scanner_path": "sonar-scanner.bat",
+  "defects4j_path": "defects4j.bat",
   "java_home": null,
   "perl5lib": "",
   "base_instruction": "Refactor the following Java code to improve readability and maintainability without changing its behavior:",

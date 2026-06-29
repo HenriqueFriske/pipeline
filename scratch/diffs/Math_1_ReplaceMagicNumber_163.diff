@@ -1,0 +1,35 @@
+--- original/src/main/java/org/apache/commons/math3/genetics/BinaryChromosome.java
++++ refactored/src/main/java/org/apache/commons/math3/genetics/BinaryChromosome.java
+@@ -29,6 +29,8 @@
+  */
+ public abstract class BinaryChromosome extends AbstractListChromosome<Integer> {
+ 
++    private static final int BINARY_DIGIT_UPPER_BOUND = 1;
++
+     /**
+      * Constructor.
+      * @param representation list of {0,1} values representing the chromosome
+@@ -53,7 +55,7 @@
+     @Override
+     protected void checkValidity(List<Integer> chromosomeRepresentation) throws InvalidRepresentationException {
+         for (int i : chromosomeRepresentation) {
+-            if (i < 0 || i >1) {
++            if (i < 0 || i > BINARY_DIGIT_UPPER_BOUND) {
+                 throw new InvalidRepresentationException(LocalizedFormats.INVALID_BINARY_DIGIT,
+                                                          i);
+             }
+@@ -69,7 +71,7 @@
+         // random binary list
+         List<Integer> rList= new ArrayList<Integer> (length);
+         for (int j=0; j<length; j++) {
+-            rList.add(GeneticAlgorithm.getRandomGenerator().nextInt(2));
++            rList.add(GeneticAlgorithm.getRandomGenerator().nextInt(BINARY_DIGIT_UPPER_BOUND + 1));
+         }
+         return rList;
+     }
+@@ -94,4 +96,4 @@
+         // all is ok
+         return true;
+     }
+-}
++}

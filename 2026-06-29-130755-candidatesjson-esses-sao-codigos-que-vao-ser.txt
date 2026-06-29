@@ -1,16 +1,3 @@
-╭─── Claude Code v2.1.186 ─────────────────────────────────────────────────────╮
-│                                                │ Tips for getting started    │
-│               Welcome back Renan!              │ Run /init to create a CLAU… │
-│                                                │ ─────────────────────────── │
-│                     ▐▛███▜▌                    │ What's new                  │
-│                    ▝▜█████▛▘                   │ Added `CLAUDE_CODE_DISABLE… │
-│                      ▘▘ ▝▝                     │ Fixed hook matchers with h… │
-│                                                │ Fixed voice dictation on m… │
-│   Opus 4.8 · Claude Team · Atendare Dev Team   │ /release-notes for more     │
-│                ~/code/pipeline                 │                             │
-╰──────────────────────────────────────────────────────────────────────────────╯
-
-
 ❯ @[candidates.json] esses sao codigos que vao ser                              
     refarorados pela LLM gemini flash                                           
     @[conference_latex_template__1__portuguese.md]                              

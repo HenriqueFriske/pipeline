@@ -1,0 +1,25 @@
+--- original/src/main/java/org/apache/commons/math3/stat/descriptive/rank/Median.java
++++ refactored/src/main/java/org/apache/commons/math3/stat/descriptive/rank/Median.java
+@@ -37,12 +37,15 @@
+     /** Serializable version identifier */
+     private static final long serialVersionUID = -3961477041290915687L;
+ 
++    /** The percentile value representing the median. */
++    private static final double MEDIAN_PERCENTILE = 50.0;
++
+     /**
+      * Default constructor.
+      */
+     public Median() {
+         // No try-catch or advertised exception - arg is valid
+-        super(50.0);
++        super(MEDIAN_PERCENTILE);
+     }
+ 
+     /**
+@@ -56,4 +59,4 @@
+         super(original);
+     }
+ 
+-}
++}

@@ -1,0 +1,27 @@
+--- original/src/main/java/org/apache/commons/math3/ode/nonstiff/EulerStepInterpolator.java
++++ refactored/src/main/java/org/apache/commons/math3/ode/nonstiff/EulerStepInterpolator.java
+@@ -49,6 +49,9 @@
+   /** Serializable version identifier. */
+   private static final long serialVersionUID = 20111120L;
+ 
++  /** Threshold for switching between interpolation formulas. */
++  private static final double MID_POINT = 0.5;
++
+   /** Simple constructor.
+    * This constructor builds an instance that is not usable yet, the
+    * {@link
+@@ -83,7 +86,7 @@
+   @Override
+   protected void computeInterpolatedStateAndDerivatives(final double theta,
+                                           final double oneMinusThetaH) {
+-      if ((previousState != null) && (theta <= 0.5)) {
++      if ((previousState != null) && (theta <= MID_POINT)) {
+           for (int i = 0; i < interpolatedState.length; ++i) {
+               interpolatedState[i] = previousState[i] + theta * h * yDotK[0][i];
+           }
+@@ -97,4 +100,4 @@
+ 
+   }
+ 
+-}
++}

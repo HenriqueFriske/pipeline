@@ -1,0 +1,121 @@
+--- original/src/main/java/org/apache/commons/math3/analysis/solvers/MullerSolver.java
++++ refactored/src/main/java/org/apache/commons/math3/analysis/solvers/MullerSolver.java
+@@ -116,28 +116,43 @@
+         }
+     }
+ 
+-    /**
+-     * Find a real root in the given interval.
+-     *
+-     * @param min Lower bound for the interval.
+-     * @param max Upper bound for the interval.
+-     * @param fMin function value at the lower bound.
+-     * @param fMax function value at the upper bound.
+-     * @return the point at which the function value is zero.
+-     * @throws TooManyEvaluationsException if the allowed number of calls to
+-     * the function to be solved has been exhausted.
+-     */
++    private interface IterationStrategy {
++        double nextX(double x0, double x1, double x2, double y0, double y1, double y2);
++        boolean isBisecting(double x, double x0, double x1, double x2);
++        double[] nextBounds(double x, double x0, double x1, double x2, double y0, double y1, double y2, double y);
++    }
++
++    private class MullerIteration implements IterationStrategy {
++        public double nextX(double x0, double x1, double x2, double y0, double y1, double y2) {
++            final double d01 = (y1 - y0) / (x1 - x0);
++            final double d12 = (y2 - y1) / (x2 - x1);
++            final double d012 = (d12 - d01) / (x2 - x0);
++            final double c1 = d01 + (x1 - x0) * d012;
++            final double delta = c1 * c1 - 4 * y1 * d012;
++            final double xplus = x1 + (-2.0 * y1) / (c1 + FastMath.sqrt(delta));
++            final double xminus = x1 + (-2.0 * y1) / (c1 - FastMath.sqrt(delta));
++            return isSequence(x0, xplus, x2) ? xplus : xminus;
++        }
++        public boolean isBisecting(double x, double x0, double x1, double x2) {
++            return (x < x1 && (x1 - x0) > 0.95 * (x2 - x0)) ||
++                   (x > x1 && (x2 - x1) > 0.95 * (x2 - x0)) ||
++                   (x == x1);
++        }
++        public double[] nextBounds(double x, double x0, double x1, double x2, double y0, double y1, double y2, double y) {
++            double nx0 = x < x1 ? x0 : x1;
++            double ny0 = x < x1 ? y0 : y1;
++            double nx2 = x > x1 ? x2 : x1;
++            double ny2 = x > x1 ? y2 : y1;
++            return new double[]{nx0, ny0, nx2, ny2, x, y};
++        }
++    }
++
+     private double solve(double min, double max,
+                          double fMin, double fMax)
+         throws TooManyEvaluationsException {
+         final double relativeAccuracy = getRelativeAccuracy();
+         final double absoluteAccuracy = getAbsoluteAccuracy();
+         final double functionValueAccuracy = getFunctionValueAccuracy();
+-
+-        // [x0, x2] is the bracketing interval in each iteration
+-        // x1 is the last approximation and an interpolation point in (x0, x2)
+-        // x is the new root approximation and new x1 for next round
+-        // d01, d12, d012 are divided differences
+ 
+         double x0 = min;
+         double y0 = fMin;
+@@ -147,44 +162,20 @@
+         double y1 = computeObjectiveValue(x1);
+ 
+         double oldx = Double.POSITIVE_INFINITY;
++        IterationStrategy strategy = new MullerIteration();
++
+         while (true) {
+-            // Muller's method employs quadratic interpolation through
+-            // x0, x1, x2 and x is the zero of the interpolating parabola.
+-            // Due to bracketing condition, this parabola must have two
+-            // real roots and we choose one in [x0, x2] to be x.
+-            final double d01 = (y1 - y0) / (x1 - x0);
+-            final double d12 = (y2 - y1) / (x2 - x1);
+-            final double d012 = (d12 - d01) / (x2 - x0);
+-            final double c1 = d01 + (x1 - x0) * d012;
+-            final double delta = c1 * c1 - 4 * y1 * d012;
+-            final double xplus = x1 + (-2.0 * y1) / (c1 + FastMath.sqrt(delta));
+-            final double xminus = x1 + (-2.0 * y1) / (c1 - FastMath.sqrt(delta));
+-            // xplus and xminus are two roots of parabola and at least
+-            // one of them should lie in (x0, x2)
+-            final double x = isSequence(x0, xplus, x2) ? xplus : xminus;
+-            final double y = computeObjectiveValue(x);
++            double x = strategy.nextX(x0, x1, x2, y0, y1, y2);
++            double y = computeObjectiveValue(x);
+ 
+-            // check for convergence
+             final double tolerance = FastMath.max(relativeAccuracy * FastMath.abs(x), absoluteAccuracy);
+-            if (FastMath.abs(x - oldx) <= tolerance ||
+-                FastMath.abs(y) <= functionValueAccuracy) {
++            if (FastMath.abs(x - oldx) <= tolerance || FastMath.abs(y) <= functionValueAccuracy) {
+                 return x;
+             }
+ 
+-            // Bisect if convergence is too slow. Bisection would waste
+-            // our calculation of x, hopefully it won't happen often.
+-            // the real number equality test x == x1 is intentional and
+-            // completes the proximity tests above it
+-            boolean bisect = (x < x1 && (x1 - x0) > 0.95 * (x2 - x0)) ||
+-                             (x > x1 && (x2 - x1) > 0.95 * (x2 - x0)) ||
+-                             (x == x1);
+-            // prepare the new bracketing interval for next iteration
+-            if (!bisect) {
+-                x0 = x < x1 ? x0 : x1;
+-                y0 = x < x1 ? y0 : y1;
+-                x2 = x > x1 ? x2 : x1;
+-                y2 = x > x1 ? y2 : y1;
+-                x1 = x; y1 = y;
++            if (!strategy.isBisecting(x, x0, x1, x2)) {
++                double[] b = strategy.nextBounds(x, x0, x1, x2, y0, y1, y2, y);
++                x0 = b[0]; y0 = b[1]; x2 = b[2]; y2 = b[3]; x1 = b[4]; y1 = b[5];
+                 oldx = x;
+             } else {
+                 double xm = 0.5 * (x0 + x2);
+@@ -200,4 +191,4 @@
+             }
+         }
+     }
+-}
++}

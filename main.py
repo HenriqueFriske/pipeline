@@ -4,7 +4,13 @@ import time
 import json
 import shutil
 import logging
+import csv
+import subprocess
 from typing import Any, Dict, Optional, Set
+
+from google import genai
+from google.genai import types
+from pydantic import BaseModel, Field
 
 import core.api_client
 import core.defects4j_mgr
@@ -18,6 +24,9 @@ PERSONAS = {
     "P-3": "You are a developer.",
     "P-4": "You are a Senior Java Software Architect and Clean Code expert."
 }
+
+class RefactorResult(BaseModel):
+    refactored_code: str = Field(description="The refactored Java code. MUST preserve newlines and standard indentation.")
 
 # Lazy logger setup
 _logger = None
@@ -118,7 +127,6 @@ def run_pipeline(
     )
     ledger_mgr = core.ledger.LedgerManager(filepath=ledger_path)
 
-    # Support resuming: get completed round IDs
     completed_ids = ledger_mgr.get_completed_ids()
     logger.info(f"Loaded {len(completed_ids)} completed rounds from ledger.")
 
@@ -127,122 +135,243 @@ def run_pipeline(
     replicas_limit = 5 if replicas_override is None else replicas_override
     replicas = list(range(1, replicas_limit + 1))
 
+    # Build full list of rounds
+    rounds_metadata = []
     id_rodada = 1
-    scanned_pos_projects: Set[str] = set()
-    total_rounds = len(snippets) * len(personas) * len(replicas)
-    round_times = []
-    last_failure = "Nenhuma"
-
     for snippet in snippets:
         for persona_key, persona_preamble in personas.items():
             for replica in replicas:
-                # Check resuming
-                if id_rodada in completed_ids:
-                    logger.info(f"Skipping completed round {id_rodada}")
-                    id_rodada += 1
-                    continue
+                rounds_metadata.append({
+                    "id_rodada": id_rodada,
+                    "snippet": snippet,
+                    "persona_key": persona_key,
+                    "persona_preamble": persona_preamble,
+                    "replica": replica
+                })
+                id_rodada += 1
 
-                # Safety check before starting
-                ensure_sonarqube_online(sonar_mgr)
+    total_rounds = len(rounds_metadata)
+    os.makedirs("refactored_code", exist_ok=True)
+    os.makedirs("logs/raw_responses", exist_ok=True)
 
-                round_start_time = time.time()
-                round_dir = os.path.join(settings["workspace_root"], f"round_{id_rodada}")
-                logger.info(f"--- Starting Round {id_rodada} (Snippet: {snippet['trecho']}, Persona: {persona_key}, Replica: {replica}) ---")
+    # --- PHASE 1: Generate all refactorings first ---
+    logger.info("\n=========================================")
+    logger.info("=== PHASE 1: GENERATING ALL REFACTORINGS ===")
+    logger.info("=========================================")
 
-                # Metrics defaults
-                status = "VALIDO"
-                complexity_base = None
-                complexity_pos = None
-                smells_base = None
-                smells_pos = None
-                token_count = 0
-                # Reset per round so a round that fails before refactoring does not
-                # persist the previous round's code under its filename (data integrity).
-                refactored_code = None
+    # Initialize Gemini client
+    api_key = settings.get("api_key") or os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        # Check .env manually
+        if os.path.exists(".env"):
+            with open(".env", "r") as f:
+                for line in f:
+                    if line.strip().startswith("GEMINI_API_KEY="):
+                        api_key = line.strip().split("=", 1)[1].strip("'\" ")
+                        break
+    if not api_key:
+        logger.error("Error: GEMINI_API_KEY is missing.")
+        sys.exit(1)
+        
+    client = genai.Client(api_key=api_key)
 
-                try:
-                    # Checkout workspace
-                    d4j_mgr.checkout(snippet["project"], snippet["version"], round_dir)
+    for round_info in rounds_metadata:
+        rid = round_info["id_rodada"]
+        snippet = round_info["snippet"]
+        persona_key = round_info["persona_key"]
+        persona_preamble = round_info["persona_preamble"]
+        replica = round_info["replica"]
 
-                    # Export class directories
-                    d4j_mgr.compile(round_dir)
-                    classes_dir = d4j_mgr.export_classes_dir(round_dir)
-                    abs_classes_dir = os.path.abspath(os.path.join(round_dir, classes_dir))
+        if rid in completed_ids:
+            continue
 
-                    # Original file details
-                    java_file_path = os.path.join(round_dir, snippet["file_path"])
-                    abs_source_file = os.path.abspath(java_file_path)
+        refac_file = f"refactored_code/round_{rid}_refac.java"
+        raw_json_file = f"logs/raw_responses/round_{rid}_raw.json"
 
-                    if not os.path.exists(abs_source_file):
-                        raise FileNotFoundError(f"Source file not found at {abs_source_file}")
+        # Check if already generated in case we are resuming
+        if os.path.exists(refac_file) and os.path.exists(raw_json_file):
+            logger.info(f"Refactoring for Round {rid} already generated. Skipping API call.")
+            continue
 
-                    with open(abs_source_file, "r", encoding="utf-8") as f:
-                        original_code = f.read()
+        logger.info(f"Generating Refactoring for Round {rid}/{total_rounds} (Snippet: {snippet['trecho']}, Persona: {persona_key})")
 
-                    # Run SonarScanner baseline
-                    project_key_base = f"{snippet['trecho']}_P{persona_key.replace('-', '')}_R{replica}_base"
-                    project_name_base = f"{snippet['trecho']}_base"
-                    
-                    logger.info("Running SonarQube baseline scan.")
-                    call_sonar_with_retry(sonar_mgr, sonar_mgr.scan, project_key_base, project_name_base, abs_source_file, abs_classes_dir)
-                    
-                    task_ok = call_sonar_with_retry(sonar_mgr, sonar_mgr.wait_for_task, project_key_base)
-                    if not task_ok:
-                        raise core.sonarqube_anal.SonarQubeError("Baseline SonarQube task failed.")
+        # Checkout workspace to read source code
+        temp_round_dir = os.path.join(settings["workspace_root"], f"round_refac_{rid}")
+        try:
+            d4j_mgr.checkout(snippet["project"], snippet["version"], temp_round_dir)
+            source_file_path = os.path.join(temp_round_dir, snippet["file_path"])
+            
+            with open(source_file_path, "r", encoding="utf-8") as f:
+                original_code = f.read()
 
-                    metrics_base = call_sonar_with_retry(sonar_mgr, sonar_mgr.get_metrics, project_key_base)
-                    complexity_base = metrics_base.get("complexity", 0)
-                    smells_base = metrics_base.get("code_smells", 0)
+            # Dynamic targeted prompt instruction (Option A)
+            line_num = snippet.get("line", "unknown")
+            ref_type = snippet.get("refatoracao_tipo", "Refactor")
+            targeted_instruction = f"Refactor the following Java code to improve readability and maintainability without changing its behavior. Focus only on the method or block of code located around line {line_num} by applying '{ref_type}' refactoring. Do NOT modify the signatures of other methods, their behavior, or any other parts of the class. Return the complete refactored class."
+            formatting_instruction = "\nIMPORTANT: The refactored Java code in your response MUST be properly formatted with standard indentation and newlines. Do not compress the code into a single line."
+            full_instruction = targeted_instruction + formatting_instruction
 
-                    # Delete temporary baseline project
-                    call_sonar_with_retry(sonar_mgr, sonar_mgr.delete_project, project_key_base)
+            # Call Gemini 3.1 flash lite
+            response = client.models.generate_content(
+                model="gemini-3.1-flash-lite",
+                contents=f"{full_instruction}\n\n{original_code}",
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=RefactorResult,
+                    system_instruction=persona_preamble or None,
+                )
+            )
 
-                    # Call Gemini API
-                    logger.info("Calling LLM for refactoring.")
-                    try:
-                        refactored_raw = core.api_client.generate_refactoring(
-                            persona_preamble=persona_preamble,
-                            base_instruction=settings["base_instruction"],
-                            code_snippet=original_code,
-                            api_key=settings["api_key"]
-                        )
-                        token_count = len(refactored_raw.split())
-                    except core.api_client.APIRateLimitError:
-                        status = "FALHA_API_RATE_LIMIT"
-                        logger.error("LLM call failed: APIRateLimitError")
-                        continue
-                    except core.api_client.APITimeoutError:
-                        status = "FALHA_API_TIMEOUT"
-                        logger.error("LLM call failed: APITimeoutError")
-                        continue
-                    except Exception as e:
-                        status = "FALHA_API"
-                        logger.error(f"LLM call failed with unexpected error: {e}")
-                        continue
+            # Save raw response metadata and text
+            response_dict = response.model_dump()
+            with open(raw_json_file, "w", encoding="utf-8") as f_raw:
+                json.dump(response_dict, f_raw, indent=2)
 
-                    # Structured output already returns clean Java code.
-                    refactored_code = refactored_raw
+            # Parse and save code
+            result = response.parsed
+            if result is None or not getattr(result, "refactored_code", None):
+                raise ValueError("Parsed structured response is empty or invalid.")
+            
+            refactored_code = result.refactored_code
+            with open(refac_file, "w", encoding="utf-8") as f_out:
+                f_out.write(refactored_code)
 
-                    # Write refactored code
-                    with open(abs_source_file, "w", encoding="utf-8") as f:
-                        f.write(refactored_code)
+            logger.info(f"Saved refactored code to: {refac_file}")
 
-                    # Compile refactored project
-                    logger.info("Compiling refactored code.")
-                    compile_ok = d4j_mgr.compile(round_dir)
-                    if not compile_ok:
-                        status = "FALHA_COMPILACAO"
-                        logger.error("Compilation failed after refactoring.")
-                        continue
+        except Exception as e:
+            logger.error(f"Error generating refactoring for Round {rid}: {e}")
+            # Save a dummy error marker so we don't try again
+            with open(refac_file + ".error", "w", encoding="utf-8") as f_err:
+                f_err.write(str(e))
+        finally:
+            # Cleanup temp checkout
+            if os.path.exists(temp_round_dir):
+                shutil.rmtree(temp_round_dir, ignore_errors=True)
 
-                    # Run tests
-                    logger.info("Running test suite.")
-                    test_result = d4j_mgr.test(round_dir, timeout=180)
-                    if test_result != "PASS":
-                        status = test_result  # FALHA_TESTES_COMPORTAMENTO or FALHA_TESTES_TIMEOUT
-                        logger.error(f"Tests failed with result: {test_result}")
-                        continue
+        # Sleep to avoid rate limits
+        time.sleep(15)
 
+    # --- PHASE 2: Validation, Tests & SonarQube Metrics ---
+    logger.info("\n=========================================")
+    logger.info("=== PHASE 2: RUNNING VALIDATION & METRICS ===")
+    logger.info("=========================================")
+
+    round_times = []
+    last_failure = "Nenhuma"
+    scanned_pos_projects: Set[str] = set()
+
+    for round_info in rounds_metadata:
+        rid = round_info["id_rodada"]
+        snippet = round_info["snippet"]
+        persona_key = round_info["persona_key"]
+        replica = round_info["replica"]
+
+        if rid in completed_ids:
+            continue
+
+        round_start_time = time.time()
+        logger.info(f"--- Processing Metrics for Round {rid}/{total_rounds} ---")
+
+        refac_file = f"refactored_code/round_{rid}_refac.java"
+        raw_json_file = f"logs/raw_responses/round_{rid}_raw.json"
+        
+        status = "VALIDO"
+        complexity_base = None
+        complexity_pos = None
+        smells_base = None
+        smells_pos = None
+        token_count = 0
+
+        # Check if refactoring failed in Phase 1
+        if os.path.exists(refac_file + ".error") or not os.path.exists(refac_file):
+            status = "FALHA_API"
+            logger.warning(f"Skipping round {rid}: Refactoring failed during Phase 1.")
+            # Record failed run
+            ledger_mgr.write_row({
+                "id_rodada": rid,
+                "trecho": snippet["trecho"],
+                "refatoracao_tipo": snippet["refatoracao_tipo"],
+                "persona": persona_key,
+                "replica": replica,
+                "status": status,
+                "complexity_base": "",
+                "complexity_pos": "",
+                "complexity_delta": "",
+                "smells_base": "",
+                "smells_pos": "",
+                "smells_delta": "",
+                "tempo_execucao_seg": 0,
+                "token_count": 0
+            })
+            continue
+
+        # Load tokens from raw response
+        try:
+            with open(raw_json_file, "r", encoding="utf-8") as f_raw:
+                resp_data = json.load(f_raw)
+            usage = resp_data.get("usage_metadata", {})
+            token_count = usage.get("total_token_count", 0)
+        except Exception:
+            token_count = 0
+
+        round_dir = os.path.join(settings["workspace_root"], f"round_{rid}")
+
+        try:
+            # Checkout workspace
+            d4j_mgr.checkout(snippet["project"], snippet["version"], round_dir)
+
+            # Export class directories
+            d4j_mgr.compile(round_dir)
+            classes_dir = d4j_mgr.export_classes_dir(round_dir)
+            # Correct classes directory relative to workdir (using target/classes)
+            abs_classes_dir = os.path.abspath(os.path.join(round_dir, classes_dir))
+
+            # Original file details
+            java_file_path = os.path.join(round_dir, snippet["file_path"])
+            abs_source_file = os.path.abspath(java_file_path)
+
+            if not os.path.exists(abs_source_file):
+                raise FileNotFoundError(f"Source file not found at {abs_source_file}")
+
+            # Run SonarScanner baseline
+            project_key_base = f"{snippet['trecho']}_P{persona_key.replace('-', '')}_R{replica}_base"
+            project_name_base = f"{snippet['trecho']}_base"
+            
+            logger.info("Running SonarQube baseline scan.")
+            call_sonar_with_retry(sonar_mgr, sonar_mgr.scan, project_key_base, project_name_base, abs_source_file, abs_classes_dir)
+            
+            task_ok = call_sonar_with_retry(sonar_mgr, sonar_mgr.wait_for_task, project_key_base)
+            if not task_ok:
+                raise core.sonarqube_anal.SonarQubeError("Baseline SonarQube task failed.")
+
+            metrics_base = call_sonar_with_retry(sonar_mgr, sonar_mgr.get_metrics, project_key_base)
+            complexity_base = metrics_base.get("complexity", 0)
+            smells_base = metrics_base.get("code_smells", 0)
+
+            # Delete temporary baseline project
+            call_sonar_with_retry(sonar_mgr, sonar_mgr.delete_project, project_key_base)
+
+            # Read and apply refactored code
+            with open(refac_file, "r", encoding="utf-8") as f_ref:
+                refactored_code = f_ref.read()
+
+            with open(abs_source_file, "w", encoding="utf-8") as f:
+                f.write(refactored_code)
+
+            # Compile refactored project
+            logger.info("Compiling refactored code.")
+            compile_ok = d4j_mgr.compile(round_dir)
+            if not compile_ok:
+                status = "FALHA_COMPILACAO"
+                logger.error("Compilation failed after refactoring.")
+            else:
+                # Run tests
+                logger.info("Running test suite.")
+                test_result = d4j_mgr.test(round_dir, timeout=180)
+                if test_result != "PASS":
+                    status = test_result  # FALHA_TESTES_COMPORTAMENTO or FALHA_TESTES_TIMEOUT
+                    logger.error(f"Tests failed with result: {test_result}")
+                else:
                     # Post-refactoring SonarQube analysis
                     project_key_pos = f"{snippet['trecho']}_P{persona_key.replace('-', '')}_R{replica}"
                     project_name_pos = snippet['trecho']
@@ -262,94 +391,83 @@ def run_pipeline(
                     status = "VALIDO"
                     logger.info("Round completed successfully.")
 
-                except core.sonarqube_anal.SonarQubeError as e:
-                    status = "FALHA_ANALISE"
-                    logger.error(f"SonarQube analysis error: {e}")
-                except Exception as e:
-                    status = "ERRO_SISTEMA"
-                    logger.error(f"Unexpected system error during round: {e}")
-                finally:
-                    # Record to ledger
-                    tempo_execucao_seg = time.time() - round_start_time
-                    complexity_delta = ""
-                    smells_delta = ""
+        except core.sonarqube_anal.SonarQubeError as e:
+            status = "FALHA_ANALISE"
+            logger.error(f"SonarQube analysis error: {e}")
+        except Exception as e:
+            status = "ERRO_SISTEMA"
+            logger.error(f"Unexpected system error during round: {e}")
+        finally:
+            # Record to ledger
+            tempo_execucao_seg = time.time() - round_start_time
+            complexity_delta = ""
+            smells_delta = ""
 
-                    if complexity_base is not None and complexity_pos is not None:
-                        complexity_delta = complexity_pos - complexity_base
-                    if smells_base is not None and smells_pos is not None:
-                        smells_delta = smells_pos - smells_base
+            if complexity_base is not None and complexity_pos is not None:
+                complexity_delta = complexity_pos - complexity_base
+            if smells_base is not None and smells_pos is not None:
+                smells_delta = smells_pos - smells_base
 
-                    row_data = {
-                        "id_rodada": id_rodada,
-                        "trecho": snippet["trecho"],
-                        "refatoracao_tipo": snippet["refatoracao_tipo"],
-                        "persona": persona_key,
-                        "replica": replica,
-                        "status": status,
-                        "complexity_base": complexity_base if complexity_base is not None else "",
-                        "complexity_pos": complexity_pos if complexity_pos is not None else "",
-                        "complexity_delta": complexity_delta,
-                        "smells_base": smells_base if smells_base is not None else "",
-                        "smells_pos": smells_pos if smells_pos is not None else "",
-                        "smells_delta": smells_delta,
-                        "tempo_execucao_seg": round(tempo_execucao_seg, 2),
-                        "token_count": token_count
-                    }
-                    ledger_mgr.write_row(row_data)
+            row_data = {
+                "id_rodada": rid,
+                "trecho": snippet["trecho"],
+                "refatoracao_tipo": snippet["refatoracao_tipo"],
+                "persona": persona_key,
+                "replica": replica,
+                "status": status,
+                "complexity_base": complexity_base if complexity_base is not None else "",
+                "complexity_pos": complexity_pos if complexity_pos is not None else "",
+                "complexity_delta": complexity_delta,
+                "smells_base": smells_base if smells_base is not None else "",
+                "smells_pos": smells_pos if smells_pos is not None else "",
+                "smells_delta": smells_delta,
+                "tempo_execucao_seg": round(tempo_execucao_seg, 2),
+                "token_count": token_count
+            }
+            ledger_mgr.write_row(row_data)
 
-                    # Save refactored code to persistent file
-                    if 'refactored_code' in locals() and refactored_code:
-                        os.makedirs("refactored_code", exist_ok=True)
-                        safe_persona = persona_key.replace('-', '')
-                        refac_filename = f"refactored_code/{snippet['trecho']}_P{safe_persona}_R{replica}_{status}.java"
-                        with open(refac_filename, "w", encoding="utf-8") as f_out:
-                            f_out.write(refactored_code)
+            # Save checkpoint to text file
+            with open("checkpoint.txt", "w", encoding="utf-8") as f_chk:
+                f_chk.write(str(rid))
 
-                    # Save checkpoint to text file
-                    with open("checkpoint.txt", "w", encoding="utf-8") as f_chk:
-                        f_chk.write(str(id_rodada))
+            # Keep track of durations for ETA
+            round_times.append(tempo_execucao_seg)
+            # Update last failure
+            if status != "VALIDO":
+                last_failure = f"Rodada {rid} ({status})"
+            
+            # Calculate ETA
+            avg_time = sum(round_times) / len(round_times)
+            remaining_rounds = total_rounds - rid
+            eta_seconds = avg_time * remaining_rounds
+            
+            if remaining_rounds > 0:
+                eta_h = int(eta_seconds // 3600)
+                eta_m = int((eta_seconds % 3600) // 60)
+                eta_s = int(eta_seconds % 60)
+                eta_str = f"{eta_h:02d}h {eta_m:02d}m {eta_s:02d}s"
+            else:
+                eta_str = "Concluído"
+                
+            progress_pct = (rid / total_rounds) * 100
+            
+            logger.info("=========================================")
+            logger.info(f"DASHBOARD PROGRESSO - Rodada {rid}/{total_rounds} ({progress_pct:.1f}%)")
+            logger.info(f"Status Atual: {status} | Tempo: {tempo_execucao_seg:.2f}s")
+            logger.info(f"Média p/ Rodada: {avg_time:.2f}s | ETA: {eta_str}")
+            logger.info(f"Última Falha Mapeada: {last_failure}")
+            logger.info("=========================================")
 
-                    # Keep track of durations for ETA
-                    round_times.append(tempo_execucao_seg)
-                    # Update last failure
-                    if status != "VALIDO":
-                        last_failure = f"Rodada {id_rodada} ({status})"
-                    
-                    # Calculate ETA
-                    avg_time = sum(round_times) / len(round_times)
-                    remaining_rounds = total_rounds - id_rodada
-                    eta_seconds = avg_time * remaining_rounds
-                    
-                    if remaining_rounds > 0:
-                        eta_h = int(eta_seconds // 3600)
-                        eta_m = int((eta_seconds % 3600) // 60)
-                        eta_s = int(eta_seconds % 60)
-                        eta_str = f"{eta_h:02d}h {eta_m:02d}m {eta_s:02d}s"
-                    else:
-                        eta_str = "Concluído"
-                        
-                    progress_pct = (id_rodada / total_rounds) * 100
-                    
-                    logger.info("=========================================")
-                    logger.info(f"DASHBOARD PROGRESSO - Rodada {id_rodada}/{total_rounds} ({progress_pct:.1f}%)")
-                    logger.info(f"Status Atual: {status} | Tempo: {tempo_execucao_seg:.2f}s")
-                    logger.info(f"Média p/ Rodada: {avg_time:.2f}s | ETA: {eta_str}")
-                    logger.info(f"Última Falha Mapeada: {last_failure}")
-                    logger.info("=========================================")
+            # Clean up temporary round workspace
+            if os.path.exists(round_dir):
+                shutil.rmtree(round_dir, ignore_errors=True)
 
-                    # Clean up temporary round workspace
-                    if os.path.exists(round_dir):
-                        shutil.rmtree(round_dir, ignore_errors=True)
-
-                    # Every 30 rounds cleanup projects
-                    if id_rodada % 30 == 0:
-                        logger.info(f"Cleaning up {len(scanned_pos_projects)} SonarQube projects to free database space.")
-                        for key in list(scanned_pos_projects):
-                            call_sonar_with_retry(sonar_mgr, sonar_mgr.delete_project, key)
-                        scanned_pos_projects.clear()
-
-                    # Increment round ID
-                    id_rodada += 1
+            # Every 30 rounds cleanup projects
+            if rid % 30 == 0:
+                logger.info(f"Cleaning up {len(scanned_pos_projects)} SonarQube projects to free database space.")
+                for key in list(scanned_pos_projects):
+                    call_sonar_with_retry(sonar_mgr, sonar_mgr.delete_project, key)
+                scanned_pos_projects.clear()
 
     logger.info("Pipeline execution finished.")
 

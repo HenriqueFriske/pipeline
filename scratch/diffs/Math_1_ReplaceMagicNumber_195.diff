@@ -1,0 +1,22 @@
+--- original/src/main/java/org/apache/commons/math3/random/Well1024a.java
++++ refactored/src/main/java/org/apache/commons/math3/random/Well1024a.java
+@@ -48,6 +48,9 @@
+ 
+     /** Third parameter of the algorithm. */
+     private static final int M3 = 10;
++
++    /** Standard integer bit width. */
++    private static final int BIT_WIDTH = 32;
+ 
+     /** Creates a new random number generator.
+      * <p>The instance is initialized using the current time as the
+@@ -100,7 +103,7 @@
+         v[indexRm1]  = z4;
+         index        = indexRm1;
+ 
+-        return z4 >>> (32 - bits);
++        return z4 >>> (BIT_WIDTH - bits);
+ 
+     }
+-}
++}

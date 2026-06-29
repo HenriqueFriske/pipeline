@@ -1,0 +1,69 @@
+--- original/src/main/java/org/apache/commons/math3/analysis/interpolation/SmoothingPolynomialBicubicSplineInterpolator.java
++++ refactored/src/main/java/org/apache/commons/math3/analysis/interpolation/SmoothingPolynomialBicubicSplineInterpolator.java
+@@ -117,22 +117,8 @@
+         MathArrays.checkOrder(xval);
+         MathArrays.checkOrder(yval);
+ 
+-        // For each line y[j] (0 <= j < yLen), construct a polynomial, with
+-        // respect to variable x, fitting array fval[][j]
+-        final PolynomialFunction[] yPolyX = new PolynomialFunction[yLen];
+-        for (int j = 0; j < yLen; j++) {
+-            xFitter.clearObservations();
+-            for (int i = 0; i < xLen; i++) {
+-                xFitter.addObservedPoint(1, xval[i], fval[i][j]);
+-            }
++        final PolynomialFunction[] yPolyX = computePolynomialsAlongX(xval, yval, fval);
+ 
+-            // Initial guess for the fit is zero for each coefficients (of which
+-            // there are "xDegree" + 1).
+-            yPolyX[j] = new PolynomialFunction(xFitter.fit(new double[xDegree + 1]));
+-        }
+-
+-        // For every knot (xval[i], yval[j]) of the grid, calculate corrected
+-        // values fval_1
+         final double[][] fval_1 = new double[xLen][yLen];
+         for (int j = 0; j < yLen; j++) {
+             final PolynomialFunction f = yPolyX[j];
+@@ -141,8 +127,6 @@
+             }
+         }
+ 
+-        // For each line x[i] (0 <= i < xLen), construct a polynomial, with
+-        // respect to variable y, fitting array fval_1[i][]
+         final PolynomialFunction[] xPolyY = new PolynomialFunction[xLen];
+         for (int i = 0; i < xLen; i++) {
+             yFitter.clearObservations();
+@@ -150,13 +134,9 @@
+                 yFitter.addObservedPoint(1, yval[j], fval_1[i][j]);
+             }
+ 
+-            // Initial guess for the fit is zero for each coefficients (of which
+-            // there are "yDegree" + 1).
+             xPolyY[i] = new PolynomialFunction(yFitter.fit(new double[yDegree + 1]));
+         }
+ 
+-        // For every knot (xval[i], yval[j]) of the grid, calculate corrected
+-        // values fval_2
+         final double[][] fval_2 = new double[xLen][yLen];
+         for (int i = 0; i < xLen; i++) {
+             final PolynomialFunction f = xPolyY[i];
+@@ -167,4 +147,18 @@
+ 
+         return super.interpolate(xval, yval, fval_2);
+     }
+-}
++
++    private PolynomialFunction[] computePolynomialsAlongX(double[] xval, double[] yval, double[][] fval) {
++        final int xLen = xval.length;
++        final int yLen = yval.length;
++        final PolynomialFunction[] yPolyX = new PolynomialFunction[yLen];
++        for (int j = 0; j < yLen; j++) {
++            xFitter.clearObservations();
++            for (int i = 0; i < xLen; i++) {
++                xFitter.addObservedPoint(1, xval[i], fval[i][j]);
++            }
++            yPolyX[j] = new PolynomialFunction(xFitter.fit(new double[xDegree + 1]));
++        }
++        return yPolyX;
++    }
++}

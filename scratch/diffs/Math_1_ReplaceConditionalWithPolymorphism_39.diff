@@ -1,0 +1,74 @@
+--- original/src/main/java/org/apache/commons/math3/distribution/AbstractIntegerDistribution.java
++++ refactored/src/main/java/org/apache/commons/math3/distribution/AbstractIntegerDistribution.java
+@@ -59,8 +59,6 @@
+      */
+     @Deprecated
+     protected AbstractIntegerDistribution() {
+-        // Legacy users are only allowed to access the deprecated "randomData".
+-        // New users are forbidden to use this constructor.
+         random = null;
+     }
+ 
+@@ -111,8 +109,7 @@
+                 return lower;
+             }
+         } else {
+-            lower -= 1; // this ensures cumulativeProbability(lower) < p, which
+-                        // is important for the solving step
++            lower -= 1;
+         }
+ 
+         int upper = getSupportUpperBound();
+@@ -120,12 +117,15 @@
+             return upper;
+         }
+ 
+-        // use the one-sided Chebyshev inequality to narrow the bracket
+-        // cf. AbstractRealDistribution.inverseCumulativeProbability(double)
++        return bracketAndSolve(p, lower, upper);
++    }
++
++    private int bracketAndSolve(double p, int lower, int upper) {
+         final double mu = getNumericalMean();
+         final double sigma = FastMath.sqrt(getNumericalVariance());
+         final boolean chebyshevApplies = !(Double.isInfinite(mu) || Double.isNaN(mu) ||
+                 Double.isInfinite(sigma) || Double.isNaN(sigma) || sigma == 0.0);
++
+         if (chebyshevApplies) {
+             double k = FastMath.sqrt((1.0 - p) / p);
+             double tmp = mu - k * sigma;
+@@ -138,7 +138,6 @@
+                 upper = ((int) Math.ceil(tmp)) - 1;
+             }
+         }
+-
+         return solveInverseCumulativeProbability(p, lower, upper);
+     }
+ 
+@@ -158,11 +157,6 @@
+         while (lower + 1 < upper) {
+             int xm = (lower + upper) / 2;
+             if (xm < lower || xm > upper) {
+-                /*
+-                 * Overflow.
+-                 * There will never be an overflow in both calculation methods
+-                 * for xm at the same time
+-                 */
+                 xm = lower + (upper - lower) / 2;
+             }
+ 
+@@ -224,12 +218,11 @@
+      */
+     private double checkedCumulativeProbability(int argument)
+         throws MathInternalError {
+-        double result = Double.NaN;
+-        result = cumulativeProbability(argument);
++        double result = cumulativeProbability(argument);
+         if (Double.isNaN(result)) {
+             throw new MathInternalError(LocalizedFormats
+                     .DISCRETE_CUMULATIVE_PROBABILITY_RETURNED_NAN, argument);
+         }
+         return result;
+     }
+-}
++}

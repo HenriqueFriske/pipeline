@@ -1,0 +1,36 @@
+--- original/src/main/java/org/apache/commons/math3/analysis/integration/gauss/SymmetricGaussIntegrator.java
++++ refactored/src/main/java/org/apache/commons/math3/analysis/integration/gauss/SymmetricGaussIntegrator.java
+@@ -30,6 +30,9 @@
+  * @version $Id$
+  */
+ public class SymmetricGaussIntegrator extends GaussIntegrator {
++    /** Zero point for function evaluation. */
++    private static final double ZERO_POINT = 0d;
++
+     /**
+      * Creates an integrator from the given {@code points} and {@code weights}.
+      * The integration interval is defined by the first and last value of
+@@ -70,7 +73,7 @@
+         final int ruleLength = getNumberOfPoints();
+ 
+         if (ruleLength == 1) {
+-            return getWeight(0) * f.value(0d);
++            return getWeight(0) * f.value(ZERO_POINT);
+         }
+ 
+         final int iMax = ruleLength / 2;
+@@ -93,7 +96,7 @@
+         if (ruleLength % 2 != 0) {
+             final double w = getWeight(iMax);
+ 
+-            final double y = w * f.value(0d) - c;
++            final double y = w * f.value(ZERO_POINT) - c;
+             final double t = s + y;
+ 
+             s = t;
+@@ -101,4 +104,4 @@
+ 
+         return s;
+     }
+-}
++}
