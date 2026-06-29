@@ -6,6 +6,14 @@ from unittest.mock import MagicMock, patch, call
 from core.api_client import APIRateLimitError, APITimeoutError, GeminiAPIError
 from core.sonarqube_anal import SonarQubeServerError
 
+
+@pytest.fixture(autouse=True)
+def _isolate_cwd(tmp_path, monkeypatch):
+    # run_pipeline writes refactored_code/, checkpoint.txt and logs/ relative to
+    # the CWD. chdir into the per-test tmp dir so the real project tree stays clean.
+    monkeypatch.chdir(tmp_path)
+
+
 def test_orchestrator_runs_complete_loop(tmp_path):
     settings = {
         "api_key": "test_key",

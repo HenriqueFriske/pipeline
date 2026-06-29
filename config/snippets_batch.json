@@ -1,0 +1,44 @@
+[
+  {
+    "trecho": "Math_1_ExtractMethod_3",
+    "project": "Math",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/linear/SingularValueDecomposition.java",
+    "refatoracao_tipo": "ExtractMethod"
+  },
+  {
+    "trecho": "Math_1_ReplaceMagicNumber_1",
+    "project": "Math",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/util/FastMath.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
+  },
+  {
+    "trecho": "Lang_1_ReplaceMagicNumber_5",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/Conversion.java",
+    "refatoracao_tipo": "ReplaceMagicNumber"
+  },
+  {
+    "trecho": "Lang_1_ReplaceConditionalWithPolymorphism_1",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/StringUtils.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
+  },
+  {
+    "trecho": "Math_1_ReplaceConditionalWithPolymorphism_8",
+    "project": "Math",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/math3/util/MathArrays.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
+  },
+  {
+    "trecho": "Lang_1_ReplaceConditionalWithPolymorphism_9",
+    "project": "Lang",
+    "version": "1",
+    "file_path": "src/main/java/org/apache/commons/lang3/BooleanUtils.java",
+    "refatoracao_tipo": "ReplaceConditionalWithPolymorphism"
+  }
+]

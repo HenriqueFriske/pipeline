@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 logs/
+.env
+temp_workspace/
+checkpoint_ledger_e2e.csv
+checkpoint_ledger_batch.csv

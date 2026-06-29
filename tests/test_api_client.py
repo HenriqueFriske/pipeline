@@ -59,6 +59,7 @@ def test_passes_model_and_thinking_config():
     assert config.response_mime_type == "application/json"
     assert config.response_schema is RefactorResult
     assert config.system_instruction == "You are a dev."
+    assert config.max_output_tokens == 65536
 
 
 def test_contents_combine_instruction_and_snippet():
@@ -79,20 +80,26 @@ def test_no_system_instruction_when_preamble_empty():
     assert kwargs["config"].system_instruction is None
 
 
-def test_empty_parsed_raises_gemini_error():
+def test_empty_parsed_retries_then_raises_gemini_error():
+    # Empty structured output is retryable: exhausts attempts, then raises.
     client = _mock_client_returning(None)
-    with patch("core.api_client.genai.Client", return_value=client):
+    with patch("core.api_client.genai.Client", return_value=client), \
+         patch("core.api_client.time.sleep") as mock_sleep:
         with pytest.raises(GeminiAPIError) as exc:
             generate_refactoring("persona", "instr", "code", api_key="KEY")
     assert "parse" in str(exc.value).lower()
-    client.models.generate_content.assert_called_once()
+    assert client.models.generate_content.call_count == 5
+    assert mock_sleep.call_count == 4
 
 
-def test_empty_refactored_code_raises_gemini_error():
+def test_empty_refactored_code_retries_then_raises_gemini_error():
     client = _mock_client_returning(RefactorResult(refactored_code=""))
-    with patch("core.api_client.genai.Client", return_value=client):
+    with patch("core.api_client.genai.Client", return_value=client), \
+         patch("core.api_client.time.sleep") as mock_sleep:
         with pytest.raises(GeminiAPIError):
             generate_refactoring("persona", "instr", "code", api_key="KEY")
+    assert client.models.generate_content.call_count == 5
+    assert mock_sleep.call_count == 4
 
 
 def test_terminal_client_error_400():

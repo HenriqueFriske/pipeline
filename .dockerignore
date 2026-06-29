@@ -1,0 +1,7 @@
+.venv
+.git
+temp_workspace
+logs
+refactored_code
+__pycache__
+*.pyc

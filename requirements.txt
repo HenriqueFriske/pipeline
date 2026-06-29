@@ -1,3 +1,5 @@
 requests>=2.28.0
-google-genai>=1.55.0
+google-genai>=1.40.0,<1.48.0
+pydantic>=2.0.0
+httpx>=0.24.0
 pytest>=7.0.0

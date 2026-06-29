@@ -136,9 +136,6 @@ def run_pipeline(
     for snippet in snippets:
         for persona_key, persona_preamble in personas.items():
             for replica in replicas:
-                if id_rodada == 3:
-                    logger.info("Reached round 3 limit. Stopping as requested.")
-                    return
                 # Check resuming
                 if id_rodada in completed_ids:
                     logger.info(f"Skipping completed round {id_rodada}")
@@ -159,6 +156,9 @@ def run_pipeline(
                 smells_base = None
                 smells_pos = None
                 token_count = 0
+                # Reset per round so a round that fails before refactoring does not
+                # persist the previous round's code under its filename (data integrity).
+                refactored_code = None
 
                 try:
                     # Checkout workspace

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import signal
 import subprocess
@@ -63,7 +65,7 @@ class Defects4JManager:
                         except: pass
                 shutil.rmtree(workspace_path)
             except Exception:
-                if "defects4j.bat" in self.d4j_bin:
+                if "defects4j.bat" in self.d4j_bin or "defects4j.sh" in self.d4j_bin:
                     try:
                         proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                         rel = os.path.relpath(os.path.abspath(workspace_path), proj_root)

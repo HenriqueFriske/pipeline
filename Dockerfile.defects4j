@@ -1,0 +1,37 @@
+# Defects4J runtime image for the refactoring pipeline.
+# Java 8 is mandatory — newer JDKs break the benchmark's legacy project builds.
+FROM eclipse-temurin:8-jdk
+
+# Defects4J system deps: git/svn for project checkouts, perl + cpanminus for the
+# framework scripts, build-essential to compile Perl XS modules.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        subversion \
+        build-essential \
+        perl \
+        cpanminus \
+        unzip \
+        wget \
+        curl \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone the framework and pin to v2.0.1 — the last line that runs on Java 8.
+# (defects4j v3.x requires Java 11, which breaks the legacy benchmark builds the
+# guide targets.) Then install its Perl dependencies.
+RUN git clone https://github.com/rjust/defects4j.git /defects4j
+WORKDIR /defects4j
+RUN git checkout v2.0.1
+RUN cpanm --notest --installdeps .
+
+# init.sh downloads the project repositories and external build libraries (~GBs).
+RUN ./init.sh
+
+# Expose the defects4j CLI on PATH.
+ENV PATH="/defects4j/framework/bin:${PATH}"
+
+# Project tree is bind-mounted here at run time (-v <project_root>:/app).
+WORKDIR /app
+
+# Keep the container alive so the wrapper can `docker exec` into it.
+CMD ["tail", "-f", "/dev/null"]
