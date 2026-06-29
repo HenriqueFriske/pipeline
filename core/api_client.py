@@ -76,6 +76,8 @@ def generate_refactoring(
         APITimeoutError: network errors after max retries.
     """
     if not api_key:
+        api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
         raise RuntimeError("API_KEY must be provided and cannot be empty.")
 
     client = genai.Client(api_key=api_key)

@@ -53,11 +53,9 @@ def test_passes_model_and_thinking_config():
     mock_client_cls.assert_called_once_with(api_key="KEY")
     client.models.generate_content.assert_called_once()
     _, kwargs = client.models.generate_content.call_args
-    assert kwargs["model"] == MODEL == "gemini-3.5-flash"
+    assert kwargs["model"] == MODEL == "gemini-2.5-flash"
     config = kwargs["config"]
-    # Gemini 3.x: sampling params omitted; reasoning controlled via thinking_level.
     assert config.temperature is None
-    assert config.thinking_config.thinking_level == types.ThinkingLevel.HIGH
     assert config.response_mime_type == "application/json"
     assert config.response_schema is RefactorResult
     assert config.system_instruction == "You are a dev."

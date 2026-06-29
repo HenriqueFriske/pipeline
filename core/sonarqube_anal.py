@@ -39,7 +39,7 @@ def _get_logger() -> logging.Logger:
 class SonarQubeManager:
     def __init__(self, url: str = "http://localhost:9000", token: str = "", scanner_bin: str = "sonar-scanner"):
         self.url = url.rstrip("/")
-        self.token = token
+        self.token = token or os.environ.get("SONAR_TOKEN", "")
         self.scanner_bin = scanner_bin
         _get_logger().info(f"Initialized SonarQubeManager with url={self.url}")
 
