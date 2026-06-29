@@ -85,6 +85,10 @@ def generate_refactoring(
         response_mime_type="application/json",
         response_schema=RefactorResult,
         system_instruction=persona_preamble or None,
+        # Give the model room for a full-file rewrite. Without this, large source
+        # files truncate at the default cap, yielding MAX_TOKENS → unparseable JSON
+        # (parsed=None) → spurious FALHA_API. 65536 is gemini-2.5-flash's output max.
+        max_output_tokens=65536,
     )
     contents = f"{base_instruction}\n\n{code_snippet}"
 
@@ -99,12 +103,19 @@ def generate_refactoring(
             )
 
             result = response.parsed
-            if result is None or not getattr(result, "refactored_code", None):
-                _get_logger().error(
-                    f"Attempt {attempt}: Empty or invalid structured response. parsed={result!r}"
+            if result is not None and getattr(result, "refactored_code", None):
+                return result.refactored_code
+
+            # Empty/invalid structured output is often transient (a truncated or
+            # safety-trimmed response). Treat it as retryable: fall through to the
+            # backoff below and only fail terminally once attempts are exhausted.
+            _get_logger().warning(
+                f"Attempt {attempt}: Empty or invalid structured response. parsed={result!r}"
+            )
+            if attempt == max_attempts:
+                raise GeminiAPIError(
+                    f"Failed to parse structured response from Gemini API after {max_attempts} attempts."
                 )
-                raise GeminiAPIError("Failed to parse structured response from Gemini API")
-            return result.refactored_code
 
         except errors.APIError as e:
             code = getattr(e, "code", None)
