@@ -24,6 +24,10 @@ WORKDIR /defects4j
 RUN git checkout v2.0.1
 RUN cpanm --notest --installdeps .
 
+# Pre-populate the project repositories with the local zip and extract it
+COPY defects4j-repos.zip /defects4j/project_repos/defects4j-repos.zip
+RUN cd /defects4j/project_repos && unzip -q -u defects4j-repos.zip && mv defects4j/project_repos/* . && rm -rf defects4j
+
 # init.sh downloads the project repositories and external build libraries (~GBs).
 RUN ./init.sh
 

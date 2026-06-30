@@ -90,7 +90,8 @@ def run_pipeline(
     snippets_path: str = "config/snippets.json",
     ledger_path: str = "checkpoint_ledger.csv",
     personas_override: Optional[Dict[str, str]] = None,
-    replicas_override: Optional[int] = None
+    replicas_override: Optional[int] = None,
+    refac_type_filter: Optional[str] = None
 ) -> None:
     logger = get_logger()
     logger.info("Starting pipeline execution.")
@@ -105,6 +106,10 @@ def run_pipeline(
         settings = json.load(f)
     with open(snippets_path, "r", encoding="utf-8") as f:
         snippets = json.load(f)
+
+    if refac_type_filter:
+        snippets = [s for s in snippets if s["refatoracao_tipo"].lower() == refac_type_filter.lower()]
+        logger.info(f"Filtered to {len(snippets)} snippets of type: {refac_type_filter}")
 
     # 2. Setup managers
     d4j_path = settings["defects4j_path"]
@@ -132,7 +137,7 @@ def run_pipeline(
 
     # Define personas and replicas loops
     personas = personas_override if personas_override is not None else PERSONAS
-    replicas_limit = 5 if replicas_override is None else replicas_override
+    replicas_limit = 3 if replicas_override is None else replicas_override
     replicas = list(range(1, replicas_limit + 1))
 
     # Build full list of rounds
@@ -485,5 +490,47 @@ def run_pipeline(
 if __name__ == "__main__":
     settings_arg = sys.argv[1] if len(sys.argv) > 1 else "config/settings.json"
     snippets_arg = sys.argv[2] if len(sys.argv) > 2 else "config/snippets.json"
-    ledger_arg = sys.argv[3] if len(sys.argv) > 3 else "checkpoint_ledger.csv"
-    run_pipeline(settings_path=settings_arg, snippets_path=snippets_arg, ledger_path=ledger_arg)
+    ledger_arg = sys.argv[3] if len(sys.argv) > 3 else None
+    refac_filter = sys.argv[4] if len(sys.argv) > 4 else None
+
+    if refac_filter is None:
+        print("\n=== SELECAO DE REFATORACAO ===")
+        print("1. ExtractMethod")
+        print("2. ReplaceMagicNumber")
+        print("3. ReplaceConditionalWithPolymorphism")
+        print("4. Executar todas (Sem filtro)")
+        
+        while True:
+            try:
+                choice = input("Escolha (1-4): ").strip()
+                if choice == "1":
+                    refac_filter = "ExtractMethod"
+                    break
+                elif choice == "2":
+                    refac_filter = "ReplaceMagicNumber"
+                    break
+                elif choice == "3":
+                    refac_filter = "ReplaceConditionalWithPolymorphism"
+                    break
+                elif choice == "4":
+                    refac_filter = None
+                    break
+                else:
+                    print("Opcao invalida. Escolha entre 1 e 4.")
+            except (KeyboardInterrupt, EOFError):
+                print("\nExecucao cancelada pelo usuario.")
+                sys.exit(0)
+
+    # Set dynamic default ledger name based on selected filter
+    if ledger_arg is None:
+        if refac_filter:
+            ledger_arg = f"checkpoint_{refac_filter.lower()}.csv"
+        else:
+            ledger_arg = "checkpoint_ledger.csv"
+
+    run_pipeline(
+        settings_path=settings_arg,
+        snippets_path=snippets_arg,
+        ledger_path=ledger_arg,
+        refac_type_filter=refac_filter
+    )
